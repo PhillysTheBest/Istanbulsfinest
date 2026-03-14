@@ -144,14 +144,16 @@ def extract_skills_tree(cv_text: str, github_text: str) -> dict:
     1. Standardize/Normalize Names: Normalize all skill names (e.g., "ReactJS" -> "React", "NodeJS" -> "Node.js").
     2. STRICT DOMAIN WHITELIST: The top-level "Domain" MUST be exactly one of these strings. DO NOT CREATE NEW ONES:
        [FrontEnd, BackEnd, MachineLearning, MobileApps, DesktopApps, EmbeddedSystems, GameDevelopment, DevOps, DataScience, Design, Maths, Cryptography, Other].
-    3. Hierarchical Grouping:
+    3. STRICT CATEGORY WHITELIST: The "Specific Category" level MUST be exactly one of these strings:
+       [API, Framework, Library, Database, Tool, Concept, Protocol, Service, Other].
+    4. Hierarchical Grouping:
        - Level 1 (Key): Domain (from whitelist)
        - Level 2 (Key): Language (e.g., Python, C, Java, JavaScript, Assembly, General)
-       - Level 3 (Key): Specific Category (e.g., API, Framework, Library, Database, Tool, Concept)
+       - Level 3 (Key): Specific Category (from whitelist)
        - Level 4 (Value): List of strings (Normalized Skills)
-    4. ALPHABETICAL SORTING: You MUST sort all keys at every level of the JSON alphabetically.
-    5. DETERMINISM: Use the provided text to pick the best fit. If a domain is ambiguous, default to 'Other'.
-    6. Output Structure: Match this exact JSON schema:
+    5. ALPHABETICAL SORTING: You MUST sort all keys at every level of the JSON alphabetically.
+    6. DETERMINISM: Use the provided text to pick the best fit. If a domain or category is ambiguous, default to 'Other'.
+    7. Output Structure: Match this exact JSON schema:
 
     {{
         "Name": "Name",
