@@ -12,23 +12,43 @@ body {
   justify-content: center;
 }
 
-.login-card {
+.auth-page {
   width: 100%;
   max-width: 360px;
-  padding: 2.5rem;
+  padding: 1rem;
+}
+
+.auth-card {
+  padding: 2rem;
   border: 1px solid #e5e5e5;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-.login-card h1 {
-  margin: 0 0 1.5rem;
-  font-size: 1.5rem;
+.auth-card + .auth-divider {
+  margin: 1.5rem 0;
+}
+
+.auth-card.signup-card {
+  margin-top: 0;
+}
+
+.auth-divider {
+  text-align: center;
+  margin: 1.5rem 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.auth-card h1,
+.auth-card h2 {
+  margin: 0 0 1.25rem;
+  font-size: 1.25rem;
   font-weight: 600;
   color: #1a1a1a;
 }
 
-.login-card label {
+.auth-card label {
   display: block;
   margin-bottom: 0.35rem;
   font-size: 0.875rem;
@@ -36,7 +56,8 @@ body {
   color: #333;
 }
 
-.login-card input {
+.auth-card input,
+.auth-card select {
   width: 100%;
   padding: 0.65rem 0.75rem;
   margin-bottom: 1rem;
@@ -46,15 +67,20 @@ body {
   background: #fff;
 }
 
-.login-card input:focus {
+.auth-card input:focus,
+.auth-card select:focus {
   outline: none;
   border-color: #999;
 }
 
-.login-card button {
+.auth-card select {
+  cursor: pointer;
+}
+
+.auth-card button {
   width: 100%;
   padding: 0.75rem;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
   font-size: 1rem;
   font-weight: 500;
   color: #fff;
@@ -64,24 +90,24 @@ body {
   cursor: pointer;
 }
 
-.login-card button:hover {
+.auth-card button:hover {
   background: #333;
 }
 
-.login-card .message {
-  margin-top: 1rem;
+.auth-card .message {
+  margin-bottom: 1rem;
   padding: 0.5rem;
   font-size: 0.875rem;
   border-radius: 4px;
   text-align: center;
 }
 
-.login-card .message.error {
+.auth-card .message.error {
   color: #b91c1c;
   background: #fef2f2;
 }
 
-.login-card .message.success {
+.auth-card .message.success {
   color: #166534;
   background: #f0fdf4;
 }
