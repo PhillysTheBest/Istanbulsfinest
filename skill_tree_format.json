@@ -1,0 +1,30 @@
+{
+  "Name": "(Extracted Name from profile or CV)",
+  "Skills": {
+    "(Domain - e.g., BackEnd)": {
+      "(Language - e.g., Python)": {
+        "(Specific Category - e.g., API)": [
+          "(NormalizedSkill1 - e.g., FastAPI)"
+        ],
+        "(Specific Category - e.g., Framework)": [
+          "(NormalizedSkill2 - e.g., Django)"
+        ]
+      },
+      "(Language - e.g., Java)": {
+        "(Specific Category - e.g., Framework)": [
+          "(NormalizedSkill - e.g., Spring Boot)"
+        ]
+      }
+    },
+    "(Domain - e.g., MachineLearning)": {
+      "(Language - e.g., Python)": {
+        "(Specific Category - e.g., Framework)": [
+          "(NormalizedSkill - e.g., PyTorch)"
+        ],
+        "(Specific Category - e.g., Library)": [
+          "(NormalizedSkill - e.g., scikit-learn)"
+        ]
+      }
+    }
+  }
+}
