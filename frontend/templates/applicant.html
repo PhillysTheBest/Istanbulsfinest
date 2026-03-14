@@ -1,36 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CV Skill Tree</title>
-    <link rel="stylesheet" href="/static/index.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Applicant – CV Skill Tree</title>
+  <link rel="stylesheet" href="/static/index.css">
+  <link rel="stylesheet" href="/static/applicant.css">
 </head>
-
 <body>
-    <div class="topbar-wrapper">
-        <input type="checkbox" id="topbar-toggle" class="topbar-toggle" aria-hidden="true">
-        <div class="topbar">
-            <div class="topbar-strip">
-                <label for="topbar-toggle" class="topbar-toggle-btn">
-                    <span class="icon-open" aria-hidden="true">▼</span>
-                    <span class="icon-close" aria-hidden="true">▲</span>
-                </label>
-            </div>
-            <div class="topbar-content">
-                <div class="topbar-content-inner">
-                    Top bar content (extractable / retractable via the button above).
-                </div>
-            </div>
+  {% if success %}
+  <div class="success-popup" role="alert">
+    <span class="success-popup-text">Success</span>
+    <a href="/applicant" class="success-popup-dismiss" aria-label="Dismiss">×</a>
+  </div>
+  {% endif %}
+
+  <div class="topbar-wrapper">
+    <input type="checkbox" id="topbar-toggle" class="topbar-toggle" aria-hidden="true">
+    <div class="topbar">
+      <div class="topbar-strip">
+        <label for="topbar-toggle" class="topbar-toggle-btn">
+          <span class="icon-open" aria-hidden="true">▼</span>
+          <span class="icon-close" aria-hidden="true">▲</span>
+        </label>
+      </div>
+      <div class="topbar-content">
+        <div class="topbar-content-inner">
+          Top bar content (extractable / retractable via the button above).
         </div>
+      </div>
     </div>
+  </div>
 
-    <main class="main-content">
+  <main class="main-content">
+    <h1>CV Skill Tree</h1>
+  </main>
 
-    </main>
+  <a href="#profile-modal" class="bottom-right-btn">Submit CV</a>
 
-    <a class="bottom-right-btn">Submit CV</a>
+  <!-- Modal: open via #profile-modal -->
+  <div id="profile-modal" class="modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+    <div class="modal-backdrop">
+      <a href="/applicant" class="modal-close-area" aria-label="Close modal"></a>
+    </div>
+    <div class="modal-box">
+      <a href="/applicant" class="modal-close-btn" aria-label="Close">×</a>
+      <h2 id="modal-title" class="modal-title">Add your profile</h2>
+
+      <form action="/applicant/profile" method="post" enctype="multipart/form-data" class="profile-form">
+        <div class="form-group">
+          <label for="cv-file">CV (PDF) <span class="required">required</span></label>
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" id="cv-file" name="cv" accept=".pdf,application/pdf" required aria-required="true">
+            <label for="cv-file" class="drop-zone-label">
+              <span class="drop-zone-prompt" id="drop-zone-prompt">Drag and drop your CV here, or click to choose</span>
+              <span class="drop-zone-accepted" id="drop-zone-accepted" aria-live="polite">
+                <span class="drop-zone-check" aria-hidden="true">✓</span>
+                <span class="drop-zone-filename" id="cv-filename"></span>
+                <button type="button" class="drop-zone-remove" id="cv-remove" aria-label="Remove file">Remove</button>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="linkedin">LinkedIn profile <span class="optional">optional</span></label>
+          <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/..." autocomplete="url">
+        </div>
+
+        <div class="form-group">
+          <label for="github">GitHub link <span class="optional">optional</span></label>
+          <input type="url" id="github" name="github" placeholder="https://github.com/..." autocomplete="url">
+        </div>
+
+        <div class="form-group">
+          <label for="portfolio">Portfolio website <span class="optional">optional</span></label>
+          <input type="url" id="portfolio" name="portfolio" placeholder="https://..." autocomplete="url">
+        </div>
+
+        <button type="submit" class="profile-submit">Submit</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var dropZone = document.getElementById('drop-zone');
+      var fileInput = document.getElementById('cv-file');
+      var promptEl = document.getElementById('drop-zone-prompt');
+      var acceptedEl = document.getElementById('drop-zone-accepted');
+      var filenameEl = document.getElementById('cv-filename');
+      var removeBtn = document.getElementById('cv-remove');
+      if (!dropZone || !fileInput) return;
+
+      function updateAcceptedDisplay() {
+        var files = fileInput.files;
+        if (files && files.length) {
+          filenameEl.textContent = files[0].name;
+          if (promptEl) promptEl.classList.add('hidden');
+          if (acceptedEl) acceptedEl.classList.add('visible');
+          dropZone.classList.add('drop-zone--has-file');
+        } else {
+          if (promptEl) promptEl.classList.remove('hidden');
+          if (acceptedEl) acceptedEl.classList.remove('visible');
+          dropZone.classList.remove('drop-zone--has-file');
+        }
+      }
+
+      function highlight() { dropZone.classList.add('drop-zone--over'); }
+      function unhighlight() { dropZone.classList.remove('drop-zone--over'); }
+      function assignFile(file) {
+        try {
+          var dt = new DataTransfer();
+          dt.items.add(file);
+          fileInput.files = dt.files;
+          updateAcceptedDisplay();
+        } catch (err) {}
+      }
+
+      fileInput.addEventListener('change', updateAcceptedDisplay);
+      if (removeBtn) {
+        removeBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          fileInput.value = '';
+          updateAcceptedDisplay();
+        });
+      }
+      dropZone.addEventListener('dragover', function (e) { e.preventDefault(); highlight(); });
+      dropZone.addEventListener('dragleave', unhighlight);
+      dropZone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        unhighlight();
+        var files = e.dataTransfer && e.dataTransfer.files;
+        if (files && files.length) assignFile(files[0]);
+      });
+    })();
+  </script>
 </body>
-
 </html>

@@ -1,14 +1,21 @@
 import os
-from fastapi import FastAPI, Request, Form
+import pprint
+import sys
+import tempfile
+from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.templating import Jinja2Templates
 import hashlib
 from backend import login
 
-app = FastAPI(title="CV Skill Tree", description="Skill Tree for CVs")
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+from CVScraperJSON import extract_github_url, extract_skills_tree, extract_text_from_pdf, scrape_github_profile
+
+app = FastAPI(title="CV Skill Tree", description="Skill Tree for CVs")
 static_dir = os.path.join(BASE_DIR, "../frontend/static")
 templates_dir = os.path.join(BASE_DIR, "../frontend/templates")
 templates = Jinja2Templates(directory=templates_dir)
@@ -53,13 +60,50 @@ async def login_post(request: Request, username: str = Form(...), password: str 
     role = login.validate_credentials(username, password)
     if role == "applicant":
         return templates.TemplateResponse(
-        "applicant.html",
-        {"request": request})
+            "applicant.html",
+            {"request": request, "success": False},
+        )
     elif role == "recruiter":
         return templates.TemplateResponse(
         "recruiter.html",
         {"request": request})
     return render_login(request, error="Invalid username or password")
+
+
+@app.get("/applicant", response_class=HTMLResponse)
+async def applicant_page(request: Request, success: str | None = None):
+    return templates.TemplateResponse(
+        "applicant.html",
+        {"request": request, "success": success is not None},
+    )
+
+
+@app.post("/applicant/profile")
+async def applicant_profile_post(
+    request: Request,
+    cv: UploadFile = File(...),
+    linkedin: str = Form(""),
+    github: str = Form(""),
+    portfolio: str = Form(""),
+):
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        content = await cv.read()
+        tmp.write(content)
+        tmp_path = tmp.name
+    try:
+        # CV from applicant form submit → CVScraperJSON.extract_text_from_pdf
+        extracted_text = extract_text_from_pdf(tmp_path)
+        github_url, github_username = extract_github_url(github)
+        if github_username:
+            github_content = scrape_github_profile(github_username)
+        else:
+            github_content = ""
+        extracted_skills = extract_skills_tree(extracted_text, github_content)
+        # TO-DO: store extracted_text, linkedin, github, portfolio (e.g. in DB)
+        pprint.pprint(extracted_skills)
+    finally:
+        os.unlink(tmp_path)
+    return RedirectResponse(url="/applicant?success=1", status_code=303)
 
 
 @app.post("/signup")
