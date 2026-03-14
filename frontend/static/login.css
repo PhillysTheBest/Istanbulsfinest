@@ -1,0 +1,87 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 360px;
+  padding: 2.5rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.login-card h1 {
+  margin: 0 0 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.login-card label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.login-card input:focus {
+  outline: none;
+  border-color: #999;
+}
+
+.login-card button {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+  background: #1a1a1a;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.login-card button:hover {
+  background: #333;
+}
+
+.login-card .message {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.login-card .message.error {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.login-card .message.success {
+  color: #166534;
+  background: #f0fdf4;
+}
