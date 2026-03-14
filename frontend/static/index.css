@@ -1,0 +1,126 @@
+/* Index / CV Skill Tree layout – no JavaScript */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Hide the checkbox; it only drives state */
+.topbar-toggle {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.topbar-wrapper {
+  position: relative;
+}
+
+.topbar {
+  background: #f5f5f5;
+  border-bottom: 1px solid #e5e5e5;
+  overflow: hidden;
+}
+
+/* Strip always visible with central toggle button */
+.topbar-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 8px;
+}
+
+.topbar-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  padding: 8px 16px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.topbar-toggle-btn:hover {
+  background: #fafafa;
+  border-color: #ccc;
+}
+
+/* Show down arrow when bar is retracted */
+.topbar-toggle-btn .icon-open {
+  display: inline;
+}
+
+.topbar-toggle-btn .icon-close {
+  display: none;
+}
+
+/* When checked (bar extracted), show up arrow */
+.topbar-toggle:checked ~ .topbar .topbar-toggle-btn .icon-open {
+  display: none;
+}
+
+.topbar-toggle:checked ~ .topbar .topbar-toggle-btn .icon-close {
+  display: inline;
+}
+
+/* Collapsible bar content */
+.topbar-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease-out;
+}
+
+.topbar-toggle:checked ~ .topbar .topbar-content {
+  max-height: 200px;
+  transition: max-height 0.3s ease-in;
+}
+
+.topbar-content-inner {
+  padding: 16px 24px;
+  border-top: 1px solid #eee;
+}
+
+/* Main content */
+.main-content {
+  padding: 24px;
+}
+
+.main-content h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Bottom-right button */
+.bottom-right-btn {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  padding: 12px 20px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #fff;
+  background: #1a1a1a;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.bottom-right-btn:hover {
+  background: #333;
+}

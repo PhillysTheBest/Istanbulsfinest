@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login</title>
-  <link rel="stylesheet" href="../static/login.css">
+  <link rel="stylesheet" href="/static/login.css">
 </head>
-
 <body>
   <div class="login-card">
     <h1>Login</h1>
-    <form id="login-form">
+    {% if error %}
+    <div class="message error" role="alert">{{ error }}</div>
+    {% endif %}
+    <form action="/login" method="post">
       <label for="username">Username</label>
       <input type="text" id="username" name="username" autocomplete="username" required>
 
@@ -20,46 +21,6 @@
 
       <button type="submit">Sign in</button>
     </form>
-    <div id="message" class="message" role="alert" aria-live="polite" hidden></div>
   </div>
-
-  <script>
-    (function () {
-      // Hardcoded credentials (replace with your own)
-      var VALID_USERNAME = 'user1';
-      var VALID_PASSWORD = 'password';
-
-      var form = document.getElementById('login-form');
-      var messageEl = document.getElementById('message');
-
-      function showMessage(text, isError) {
-        messageEl.textContent = text;
-        messageEl.hidden = false;
-        messageEl.className = 'message ' + (isError ? 'error' : 'success');
-      }
-
-      function hideMessage() {
-        messageEl.hidden = true;
-        messageEl.className = 'message';
-      }
-
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        hideMessage();
-
-        var username = document.getElementById('username').value.trim();
-        var password = document.getElementById('password').value;
-
-        if (username === VALID_USERNAME && password === VALID_PASSWORD) {
-          showMessage('Login successful.', false);
-          // Optional: redirect or do something else
-          // window.location.href = '/dashboard.html';
-        } else {
-          showMessage('Invalid username or password.', true);
-        }
-      });
-    })();
-  </script>
 </body>
-
 </html>
