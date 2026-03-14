@@ -2,12 +2,14 @@ import os
 import pprint
 import sys
 import tempfile
+import uuid
 from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.templating import Jinja2Templates
 import hashlib
 from backend import login
+from database import get_credentials_collection
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
@@ -78,6 +80,11 @@ async def applicant_page(request: Request, success: str | None = None):
     )
 
 
+@app.get("/apply", response_class=HTMLResponse)
+async def apply_page(request: Request):
+    return templates.TemplateResponse("apply.html", {"request": request})
+
+
 @app.post("/applicant/profile")
 async def applicant_profile_post(
     request: Request,
@@ -117,8 +124,25 @@ async def signup_post(
     sha256_hash.update(password.encode("utf-8"))
     hashed_password = sha256_hash.hexdigest()
 
-    print(f"Hashed password: {hashed_password}")
-    
+    try:
+        creds = get_credentials_collection()
+        if creds.find_one({"username": username}):
+            return render_login(
+                request,
+                signup_error="Username already taken. Choose another.",
+            )
+        user_id = str(uuid.uuid4())
+        creds.insert_one({
+            "user_id": user_id,
+            "username": username,
+            "password": hashed_password,
+            "role": role,
+        })
+    except Exception as e:
+        return render_login(
+            request,
+            signup_error=f"Could not create account: {e}",
+        )
 
     return render_login(
         request,

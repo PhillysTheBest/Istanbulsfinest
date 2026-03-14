@@ -1,9 +1,13 @@
+# database.py updates
 import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
+import certifi  # <--- Add this import
 
 # Load environment variables
 load_dotenv()
+
+mongodb_url = os.getenv("MONGODB_URL")
 
 _client = None
 
@@ -11,10 +15,14 @@ def get_client():
     """Initializes the MongoDB client singleton."""
     global _client
     if _client is None:
-        mongodb_url = os.getenv("MONGODB_URL")
         if not mongodb_url:
             raise ValueError("MONGODB_URL not found in .env file")
-        _client = MongoClient(mongodb_url)
+        
+        # Add the tlsCAFile parameter here
+        _client = MongoClient(
+            mongodb_url, 
+            tlsCAFile=certifi.where()
+        )
     return _client
 
 def get_creds_db():
@@ -22,7 +30,14 @@ def get_creds_db():
     Returns the 'Creds' database instance.
     Used for user authentication and login details.
     """
-    return get_client()["Creds"]
+    return get_client()["Creds"] # Ends up being get_client()["Creds"]["Credentials"]
+
+def get_credentials_collection():
+    """
+    Helper to get the 'Credentials' collection in the 'Creds' database.
+    Format: { "user_id": "", "username": "", "password": "", "role": "" }
+    """
+    return get_creds_db()["Credentials"]
 
 def get_skills_db():
     """
@@ -37,12 +52,20 @@ def get_skills_profile_collection():
     """
     return get_skills_db()["SkillsProfile"]
 
-def get_credentials_collection():
+def get_job_db():
     """
-    Helper to get the 'Credentials' collection in the 'Creds' database.
-    Format: { "user_id": "", "username": "", "password": "", "role": "" }
+    Returns the 'Jobs' database instance.
+    Used for job postings and matching data.
     """
-    return get_creds_db()["Credentials"]
+    return get_client()["Jobs"]
+
+def get_job_collection():
+    """
+    Helper to get the specific 'Jobs' collection directly.
+    """
+    return get_job_db()["Jobs"]
+
+
 
 # Optional: Helper to close connection (good for scripts)
 def close_connection():
