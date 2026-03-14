@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.templating import Jinja2Templates
 import hashlib
 from backend import login
+from database import get_skills_profile_collection
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
@@ -78,6 +79,22 @@ async def applicant_page(request: Request, success: str | None = None):
     )
 
 
+@app.get("/applicant/tree", response_class=HTMLResponse)
+async def skill_tree_page(request: Request):
+    # Fetch the latest profile for now (simple hackathon logic)
+    # In a real app, we'd filter by user_id/session
+    collection = get_skills_profile_collection()
+    profile = collection.find_one(sort=[("_id", -1)])
+    
+    if not profile:
+        return RedirectResponse(url="/applicant")
+        
+    return templates.TemplateResponse(
+        "skill_tree.html",
+        {"request": request, "profile": profile}
+    )
+
+
 @app.post("/applicant/profile")
 async def applicant_profile_post(
     request: Request,
@@ -99,7 +116,15 @@ async def applicant_profile_post(
         else:
             github_content = ""
         extracted_skills = extract_skills_tree(extracted_text, github_content)
-        # TO-DO: store extracted_text, linkedin, github, portfolio (e.g. in DB)
+        
+        # Store in MongoDB
+        collection = get_skills_profile_collection()
+        collection.update_one(
+            {"name": extracted_skills.get("Name", "Unknown")},
+            {"$set": extracted_skills},
+            upsert=True
+        )
+        
         pprint.pprint(extracted_skills)
     finally:
         os.unlink(tmp_path)

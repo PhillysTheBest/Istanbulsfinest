@@ -36,6 +36,22 @@
   opacity: 1;
 }
 
+.success-popup-action {
+  color: #fff;
+  text-decoration: underline;
+  font-weight: 600;
+  margin-left: auto;
+  margin-right: 1.5rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.success-popup-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 /* Modal: hidden by default, visible when :target */
 .modal {
   position: fixed;

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Skill Tree</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0a0a0c;
+            --text-color: #e2e8f0;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            overflow: hidden; /* D3 will handle scrolling/zoom */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            padding: 1.5rem 2rem;
+            background: rgba(15, 15, 20, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-btn {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        #tree-container {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            cursor: move;
+        }
+
+        .node circle {
+            fill: #fff;
+            stroke-width: 2px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .node text {
+            font-size: 12px;
+            fill: #cbd5e1;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+
+        .link {
+            fill: none;
+            stroke-opacity: 0.4;
+            stroke-width: 1.5px;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            pointer-events: none;
+            display: none;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ profile.Name }}'s Skill Tree</h1>
+        <a href="/applicant" class="back-btn">← Back to Dashboard</a>
+    </div>
+
+    <div id="tree-container"></div>
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Data injected from FastAPI/Jinja
+        const rawData = {{ profile.Skills | tojson }};
+        const candidateName = "{{ profile.Name }}";
+
+        // Domain colors mapping
+        const domainColors = {
+            "FrontEnd": "#22d3ee",
+            "BackEnd": "#a855f7",
+            "MachineLearning": "#f472b6",
+            "MobileApps": "#4ade80",
+            "DesktopApps": "#fbbf24",
+            "EmbeddedSystems": "#f87171",
+            "GameDevelopment": "#60a5fa",
+            "DevOps": "#818cf8",
+            "DataScience": "#fb923c",
+            "Cloud": "#38bdf8",
+            "Maths": "#c084fc",
+            "Security": "#e879f9",
+            "OtherDomain": "#94a3b8"
+        };
+
+        // Convert the flat object to a D3-friendly hierarchical structure
+        function transformData(data) {
+            const root = { name: candidateName, children: [] };
+            
+            for (const [domain, languages] of Object.entries(data)) {
+                const domainNode = { name: domain, children: [] };
+                for (const [language, categories] of Object.entries(languages)) {
+                    const langNode = { name: language, children: [] };
+                    for (const [category, skills] of Object.entries(categories)) {
+                        const catNode = { 
+                            name: category, 
+                            children: skills.map(s => ({ name: s }))
+                        };
+                        langNode.children.push(catNode);
+                    }
+                    domainNode.children.push(langNode);
+                }
+                root.children.push(domainNode);
+            }
+            return root;
+        }
+
+        const dataNode = transformData(rawData);
+
+        // SVG Setup
+        const width = window.innerWidth;
+        const height = window.innerHeight - 80;
+        const radius = Math.min(width, height) / 2 * 0.8;
+
+        const svg = d3.select("#tree-container").append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .call(d3.zoom().on("zoom", (event) => {
+                g.attr("transform", event.transform);
+            }))
+            .append("g");
+
+        const g = svg.append("g")
+            .attr("transform", `translate(${width / 2},${height / 2})`);
+
+        const tree = d3.tree()
+            .size([2 * Math.PI, radius])
+            .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
+
+        let root = d3.hierarchy(dataNode);
+        
+        // Collapse all nodes except root and first level initially
+        root.descendants().forEach((d, i) => {
+            d._children = d.children;
+            if (d.depth > 1) d.children = null;
+        });
+
+        const diagonal = d3.linkRadial()
+            .angle(d => d.x)
+            .radius(d => d.y);
+
+        function update(source) {
+            const nodes = root.descendants().reverse();
+            const links = root.links();
+
+            tree(root);
+
+            // Links
+            const link = g.selectAll(".link")
+                .data(links, d => d.target.id || (d.target.id = Math.random().toString()));
+
+            const linkEnter = link.enter().append("path")
+                .attr("class", "link")
+                .attr("d", d3.linkRadial()
+                    .angle(source.x)
+                    .radius(source.y))
+                .attr("stroke", d => {
+                    let parent = d.target;
+                    while (parent.depth > 1) parent = parent.parent;
+                    return domainColors[parent.data.name] || "#444";
+                });
+
+            link.merge(linkEnter).transition().duration(500)
+                .attr("d", diagonal);
+
+            link.exit().transition().duration(500)
+                .attr("d", d3.linkRadial()
+                    .angle(source.x)
+                    .radius(source.y))
+                .remove();
+
+            // Nodes
+            const node = g.selectAll(".node")
+                .data(nodes, d => d.id || (d.id = Math.random().toString()));
+
+            const nodeEnter = node.enter().append("g")
+                .attr("class", "node")
+                .attr("transform", d => `rotate(${source.x * 180 / Math.PI - 90}) translate(${source.y},0)`)
+                .on("click", (event, d) => {
+                    if (d.children) {
+                        d._children = d.children;
+                        d.children = null;
+                    } else {
+                        d.children = d._children;
+                        d._children = null;
+                    }
+                    update(d);
+                });
+
+            nodeEnter.append("circle")
+                .attr("r", d => d.depth === 0 ? 8 : (d.depth === 1 ? 6 : 4))
+                .attr("fill", d => {
+                    if (d.depth === 0) return "#fff";
+                    let parent = d;
+                    while (parent.depth > 1) parent = parent.parent;
+                    return domainColors[parent.data.name] || "#94a3b8";
+                })
+                .style("filter", "drop-shadow(0 0 5px currentColor)");
+
+            nodeEnter.append("text")
+                .attr("dy", "0.31em")
+                .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
+                .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
+                .attr("transform", d => d.x >= Math.PI ? "rotate(180)" : null)
+                .text(d => d.data.name)
+                .clone(true).lower()
+                .attr("stroke", "white");
+
+            const nodeUpdate = node.merge(nodeEnter).transition().duration(500)
+                .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`);
+
+            node.exit().transition().duration(500)
+                .attr("transform", d => `rotate(${source.x * 180 / Math.PI - 90}) translate(${source.y},0)`)
+                .remove();
+        }
+
+        update(root);
+        
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight - 80;
+            d3.select("svg").attr("width", width).attr("height", height);
+        });
+
+    </script>
+</body>
+</html>
