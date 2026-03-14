@@ -9,7 +9,7 @@ from google import genai
 from google.genai import types
 
 # Configure the API keys using environment variables 
-api_key = "AIzaSyAOwu55-rf553Dj7jVFnFcNxb5Ke1mZ540"
+api_key = "API-KEY-HERE"
 if not api_key:
     raise ValueError("API KEY missing. Suggestion: $env:API_KEY=\"<your_full_key>\"")
 
