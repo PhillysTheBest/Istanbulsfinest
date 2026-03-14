@@ -141,21 +141,60 @@ def extract_skills_tree(cv_text: str, github_text: str) -> dict:
     Extract the candidate's name and a comprehensive "skills tree" from the provided combined CV and GitHub profile snippet.
 
     CRITICAL RULES FOR CONSISTENCY:
-    1. Standardize/Normalize Names: Normalize all skill names (e.g., "ReactJS" -> "React", "NodeJS" -> "Node.js").
-    2. STRICT DOMAIN WHITELIST: The top-level "Domain" MUST be exactly one of these strings:
-       [FrontEnd, BackEnd, MachineLearning, MobileApps, DesktopApps, EmbeddedSystems, GameDevelopment, DevOps, DataScience, Maths, Security, OtherDomain].
-    3. STRICT LANGUAGE WHITELIST: The "Language" level MUST be exactly one of these strings:
+    1. Standardize/Normalize Names: Normalize all skill names (e.g., "ReactJS" -> "React", "NodeJS" -> "Node.js"). 
+       Specifically for APIs, map "HTTP API", "Web API", or "JSON API" to "REST API".
+    2. CASE NORMALIZATION: Every single skill, category, and domain MUST be in Title Case (e.g., "Fastapi" -> "Fastapi", "Python" -> "Python").
+    3. STRICT DOMAIN WHITELIST: The top-level "Domain" MUST be exactly one of these strings:
+       [FrontEnd, BackEnd, MachineLearning, MobileApps, DesktopApps, EmbeddedSystems, GameDevelopment, DevOps, DataScience, Cloud, Maths, Security, OtherDomain].
+    4. STRICT LANGUAGE WHITELIST: The "Language" level MUST be exactly one of these strings:
        [Python, Java, JavaScript, TypeScript, C, C++, C#, Go, Rust, PHP, Swift, Kotlin, Ruby, Objective-C, SQL, HTML, CSS, Assembly, Shell, Scala, R, MATLAB, Dart, NoSQL, General, OtherLanguage].
-    4. STRICT CATEGORY WHITELIST: The "Specific Category" level MUST be exactly one of these strings:
+    5. STRICT CATEGORY WHITELIST: The "Specific Category" level MUST be exactly one of these strings:
        [API, Framework, Library, Database, Tool, Concept, Protocol, Service, OtherCategory].
-    5. Hierarchical Grouping:
+    6. Hierarchical Grouping:
        - Level 1 (Key): Domain (from whitelist)
        - Level 2 (Key): Language (from whitelist)
        - Level 3 (Key): Specific Category (from whitelist)
        - Level 4 (Value): List of strings (Normalized Skills)
-    6. ALPHABETICAL SORTING: You MUST sort all keys at every level of the JSON alphabetically.
-    7. DETERMINISM: Use the provided text to pick the best fit. If any level is ambiguous, default to 'Other' or 'General'.
-    8. Output Structure: Match this exact JSON schema:
+    7. ALPHABETICAL SORTING: You MUST sort all keys at every level of the JSON alphabetically.
+    8. DETERMINISM: Use the provided text to pick the best fit. If any level is ambiguous, default to the 'Other...' equivalent.
+    
+    IDEAL EXAMPLES FOR GUIDANCE:
+    
+    Example 1 (Backend Python dev):
+    Input: "I build APIs with Flask and store data in PostgreSQL. I also use Docker for deployment."
+    Output: {{
+        "Name": "Example Name",
+        "Skills": {{
+            "BackEnd": {{
+                "Python": {{
+                    "Framework": ["Flask"],
+                    "Database": ["Postgres"]
+                }},
+                "General": {{
+                    "Tool": ["Docker"],
+                    "API": ["Rest Api"]
+                }}
+            }}
+        }}
+    }}
+
+    Example 2 (Web Frontend):
+    Input: "React developer familiar with Tailwind and Vercel."
+    Output: {{
+        "Name": "Example Name",
+        "Skills": {{
+            "FrontEnd": {{
+                "JavaScript": {{
+                    "Framework": ["React", "Tailwind"]
+                }},
+                "General": {{
+                    "Service": ["Vercel"]
+                }}
+            }}
+        }}
+    }}
+
+    Output Structure: Match this exact JSON schema:
 
     {{
         "Name": "Name",
@@ -171,7 +210,6 @@ def extract_skills_tree(cv_text: str, github_text: str) -> dict:
     Text to analyze:
     {combined_info}
     """
-
     # 2. GENERATION CONFIG: 
     # Use the new Generation Config structure from `google.genai.types`
     # - `response_mime_type="application/json"` forces Gemini to only output valid JSON (no markdown text).
