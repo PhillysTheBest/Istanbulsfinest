@@ -3,7 +3,7 @@ import json
 import datetime
 import hashlib
 from database import get_skills_db, get_skills_profile_collection
-from CVSCraperJSON import (
+from CVScraperJSON import (
     extract_text_from_pdf, 
     extract_github_url, 
     scrape_github_profile, 
