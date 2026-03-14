@@ -48,6 +48,11 @@
           <option value="recruiter">Recruiter</option>
         </select>
 
+        <div id="company-field" hidden>
+          <label for="signup-company">Company name</label>
+          <input type="text" id="signup-company" name="company_name" autocomplete="organization" placeholder="Your company name">
+        </div>
+
         <button type="submit">Create account</button>
       </form>
       <p class="auth-switch">
@@ -75,6 +80,20 @@
         loginCard.removeAttribute('hidden');
         page.classList.remove('auth-page--signup');
       });
+
+      var roleSelect = document.getElementById('signup-role');
+      var companyField = document.getElementById('company-field');
+      if (roleSelect && companyField) {
+        function toggleCompanyField() {
+          if (roleSelect.value === 'recruiter') {
+            companyField.removeAttribute('hidden');
+          } else {
+            companyField.setAttribute('hidden', '');
+          }
+        }
+        roleSelect.addEventListener('change', toggleCompanyField);
+        toggleCompanyField();
+      }
     })();
   </script>
 </body>

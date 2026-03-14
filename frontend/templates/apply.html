@@ -16,49 +16,29 @@
 
   <div class="apply-content">
     <div class="apply-grid">
-      <button type="button" class="apply-square" data-index="0" aria-label="Job 1"></button>
-      <button type="button" class="apply-square" data-index="1" aria-label="Job 2"></button>
-      <button type="button" class="apply-square" data-index="2" aria-label="Job 3"></button>
-      <button type="button" class="apply-square" data-index="3" aria-label="Job 4"></button>
-      <button type="button" class="apply-square" data-index="4" aria-label="Job 5"></button>
+      {% for job in jobs %}
+      <div class="apply-square" data-index="{{ loop.index0 }}" data-job-id="{{ job.id if job else '' }}" aria-label="{{ job.title if job else 'Job ' ~ loop.index }}">
+        {% if job %}
+        <div class="apply-square-inner">
+          <div class="apply-square-title">{{ job.title }}</div>
+          <div class="apply-square-company">{{ job.company_name }}</div>
+          <div class="apply-square-preview">{{ job.preview }}</div>
+        </div>
+        {% else %}
+        <div class="apply-square-inner apply-square-empty">No job</div>
+        {% endif %}
+      </div>
+      {% endfor %}
     </div>
     <div class="apply-refresh-wrap">
-      <button type="button" class="apply-refresh" id="apply-refresh" aria-label="Refresh">
+      <a href="/apply" class="apply-refresh" id="apply-refresh" aria-label="Refresh to load 5 new random jobs">
         <svg class="apply-refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M23 4v6h-6M1 20v-6h6"/>
           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
         </svg>
-      </button>
+      </a>
     </div>
   </div>
-  <script>
-    (function () {
-      var refreshBtn = document.getElementById('apply-refresh');
-      var squares = document.querySelectorAll('.apply-square');
-      if (!refreshBtn || !squares.length) return;
-
-      function loadJobsFromDb() {
-        // TODO: fetch jobs from DB and return data
-        return null;
-      }
-
-      function updateSquareContents(jobData) {
-        // jobData: array of up to 5 items (e.g. { label, id }). Update each .apply-square.
-        squares.forEach(function (el, i) {
-          var item = jobData && jobData[i];
-          el.textContent = item ? item.label : '';
-          el.setAttribute('aria-label', item ? item.label : 'Job ' + (i + 1));
-          if (item && item.id) el.dataset.jobId = item.id;
-        });
-      }
-
-      refreshBtn.addEventListener('click', function () {
-        var jobData = loadJobsFromDb();
-        // When DB is wired up, pass jobData to updateSquareContents(jobData)
-        updateSquareContents(jobData);
-      });
-    })();
-  </script>
 </body>
 
 </html>

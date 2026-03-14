@@ -17,3 +17,7 @@ beautifulsoup4
 
 # Testing/Utilities
 fpdf
+
+# Session Middleware
+starlette-sessions
+itsdangerous
