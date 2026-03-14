@@ -1,0 +1,6 @@
+pymongo
+python-dotenv
+# motor (if you want async support for FastAPI later)
+# motor
+# fastapi
+# uvicorn
