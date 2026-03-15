@@ -6,48 +6,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Applied Jobs – CV Skill Tree</title>
   <link rel="stylesheet" href="/static/index.css">
-  <link rel="stylesheet" href="/static/apply.css">
+  <link rel="stylesheet" href="/static/applicant-style-pages.css">
 </head>
 
-<body class="apply-page">
-  <header class="apply-header">
-    <h1>Applied Jobs</h1>
-  </header>
-
-  <a href="/applicant" class="back-btn" aria-label="Back to applicant">← Back</a>
-
-  <div class="apply-content">
-    <div class="apply-grid apply-grid-applied-jobs">
-      {% for job in jobs %}
-      <div class="apply-square apply-square-clickable" data-job-id="{{ job.id }}" data-job-title="{{ job.title|e }}" data-company-name="{{ job.company_name|e }}" data-preview="{{ job.preview|e }}" data-qualifications="{{ job.qualifications|e }}" data-created-at="{{ job.created_at }}" aria-label="{{ job.title|e }}">
-        <div class="apply-square-inner">
-          <div class="apply-square-title">{{ job.title }}</div>
-          <div class="apply-square-company">{{ job.company_name }}</div>
-          <div class="apply-square-preview">{{ job.preview }}</div>
-          <div class="apply-square-meta">Applied {{ job.applied_at_formatted }} · {{ job.status }}</div>
+<body class="applicant-style-page">
+  <div class="topbar-wrapper">
+    <input type="checkbox" id="topbar-toggle" class="topbar-toggle" aria-hidden="true">
+    <div class="topbar">
+      <div class="topbar-strip">
+        <label for="topbar-toggle" class="topbar-toggle-btn">
+          <span class="icon-open" aria-hidden="true">▼</span>
+          <span class="icon-close" aria-hidden="true">▲</span>
+        </label>
+      </div>
+      <div class="topbar-content">
+        <div class="topbar-content-inner">
+          Jobs you have applied to. Click a card to view details.
         </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="main-content">
+    <h1>Applied Jobs</h1>
+
+    <div class="job-grid job-grid-applied">
+      {% for job in jobs %}
+      <div class="job-square job-square-clickable" data-job-id="{{ job.id }}" data-job-title="{{ job.title|e }}" data-company-name="{{ job.company_name|e }}" data-preview="{{ job.preview|e }}" data-qualifications="{{ job.qualifications|e }}" data-created-at="{{ job.created_at }}" aria-label="{{ job.title|e }}">
+        <div class="job-square-title">{{ job.title }}</div>
+        <div class="job-square-company">{{ job.company_name }}</div>
+        <div class="job-square-preview">{{ job.preview }}</div>
+        <div class="job-square-meta">Applied {{ job.applied_at_formatted }} · {{ job.status }}</div>
       </div>
       {% endfor %}
     </div>
     {% if not jobs %}
     <p class="apply-empty">You haven't applied to any jobs yet. <a href="/apply">Search quests</a> to find jobs.</p>
     {% endif %}
+  </main>
+
+  <a href="/applicant/tree" class="back-btn" aria-label="Back to skill tree">← Back</a>
+  <div class="bottom-buttons">
+    <a href="/apply" class="bottom-right-btn">Search quests</a>
   </div>
 
-  <div id="applied-job-modal" class="apply-modal" role="dialog" aria-labelledby="applied-modal-title" aria-modal="true" hidden>
-    <div class="apply-modal-backdrop" id="applied-modal-backdrop"></div>
-    <div class="apply-modal-card">
-      <h2 id="applied-modal-title" class="apply-modal-title">Job details</h2>
-      <div class="apply-modal-body">
-        <p class="apply-modal-field"><strong>Title</strong><span id="applied-modal-title-text"></span></p>
-        <p class="apply-modal-field"><strong>Company</strong><span id="applied-modal-company"></span></p>
-        <p class="apply-modal-field"><strong>Preview</strong><span id="applied-modal-preview"></span></p>
-        <p class="apply-modal-field"><strong>Qualifications</strong><pre id="applied-modal-qualifications"></pre></p>
-        <p class="apply-modal-field"><strong>Posted</strong><span id="applied-modal-created"></span></p>
+  <div id="applied-job-modal" class="modal-overlay" role="dialog" aria-labelledby="applied-modal-title" aria-modal="true" hidden>
+    <div class="modal-backdrop" id="applied-modal-backdrop"></div>
+    <div class="modal-box">
+      <button type="button" class="modal-close-btn" id="applied-modal-close" aria-label="Close">×</button>
+      <h2 id="applied-modal-title" class="modal-title">Job details</h2>
+      <div class="modal-body">
+        <p class="modal-field"><strong>Title</strong><span id="applied-modal-title-text"></span></p>
+        <p class="modal-field"><strong>Company</strong><span id="applied-modal-company"></span></p>
+        <p class="modal-field"><strong>Preview</strong><span id="applied-modal-preview"></span></p>
+        <p class="modal-field"><strong>Qualifications</strong><pre id="applied-modal-qualifications"></pre></p>
+        <p class="modal-field"><strong>Posted</strong><span id="applied-modal-created"></span></p>
       </div>
-      <div class="apply-modal-actions">
-        <button type="button" class="apply-modal-btn-interview" id="applied-modal-interview-prep">Interview prep</button>
-        <button type="button" class="apply-modal-btn-close" id="applied-modal-close">Close</button>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn-primary" id="applied-modal-interview-prep">Interview prep</button>
+        <button type="button" class="modal-btn-close" id="applied-modal-close-btn">Close</button>
       </div>
     </div>
   </div>
@@ -57,6 +74,7 @@
       var modal = document.getElementById('applied-job-modal');
       var backdrop = document.getElementById('applied-modal-backdrop');
       var closeBtn = document.getElementById('applied-modal-close');
+      var closeBtn2 = document.getElementById('applied-modal-close-btn');
       var titleEl = document.getElementById('applied-modal-title-text');
       var companyEl = document.getElementById('applied-modal-company');
       var previewEl = document.getElementById('applied-modal-preview');
@@ -84,10 +102,11 @@
         modal.setAttribute('hidden', '');
       }
 
-      document.querySelectorAll('.apply-grid-applied-jobs .apply-square-clickable').forEach(function (el) {
+      document.querySelectorAll('.job-grid-applied .job-square-clickable').forEach(function (el) {
         el.addEventListener('click', function () { openModal(el); });
       });
       if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      if (closeBtn2) closeBtn2.addEventListener('click', closeModal);
       if (backdrop) backdrop.addEventListener('click', closeModal);
       document.getElementById('applied-modal-interview-prep').addEventListener('click', function () {
         // Interview prep – function to be defined later

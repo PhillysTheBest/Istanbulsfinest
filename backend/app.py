@@ -113,27 +113,64 @@ async def login_post(request: Request, username: str = Form(...), password: str 
     return RedirectResponse(url="/recruiter", status_code=303)
 
 
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=303)
+
+
+def _applicant_has_profile(user_id: str) -> bool:
+    if not user_id:
+        return False
+    collection = get_skills_profile_collection()
+    return collection.find_one({"user_id": user_id}) is not None
+
+
 @app.get("/applicant", response_class=HTMLResponse)
 async def applicant_page(request: Request, success: str | None = None):
+    if request.session.get("role") != "applicant":
+        return RedirectResponse(url="/login", status_code=303)
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return RedirectResponse(url="/login", status_code=303)
+    if not _applicant_has_profile(user_id):
+        return RedirectResponse(url="/applicant/upload", status_code=303)
+    return RedirectResponse(url="/applicant/tree", status_code=303)
+
+
+@app.get("/applicant/upload", response_class=HTMLResponse)
+async def applicant_upload_page(request: Request):
+    """CV upload page for applicants who have not yet uploaded. Required before seeing tree/dashboard."""
+    if request.session.get("role") != "applicant":
+        return RedirectResponse(url="/login", status_code=303)
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return RedirectResponse(url="/login", status_code=303)
+    if _applicant_has_profile(user_id):
+        return RedirectResponse(url="/applicant/tree", status_code=303)
     return templates.TemplateResponse(
-        "applicant.html",
-        {"request": request, "success": success is not None},
+        "applicant_upload.html",
+        {"request": request},
     )
 
 
 @app.get("/applicant/tree", response_class=HTMLResponse)
 async def skill_tree_page(request: Request):
-    # Fetch the latest profile for now (simple hackathon logic)
-    # In a real app, we'd filter by user_id/session
+    if request.session.get("role") != "applicant":
+        return RedirectResponse(url="/login", status_code=303)
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return RedirectResponse(url="/login", status_code=303)
     collection = get_skills_profile_collection()
-    profile = collection.find_one(sort=[("_id", -1)])
-    
+    profile = collection.find_one({"user_id": user_id})
     if not profile:
-        return RedirectResponse(url="/applicant")
-        
+        return RedirectResponse(url="/applicant/upload", status_code=303)
     return templates.TemplateResponse(
         "skill_tree.html",
-        {"request": request, "profile": profile}
+        {"request": request, "profile": profile},
+    )
+
+
 def _get_applied_jobs_for_user(user_id: str):
     """Fetch all applications for user_id and return list with job title, company name, preview, applied_at, status."""
     apps_coll = get_applications_collection()
@@ -257,12 +294,16 @@ async def applicant_profile_post(
     github: str = Form(""),
     portfolio: str = Form(""),
 ):
+    if request.session.get("role") != "applicant":
+        return RedirectResponse(url="/login", status_code=303)
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return RedirectResponse(url="/login", status_code=303)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
         content = await cv.read()
         tmp.write(content)
         tmp_path = tmp.name
     try:
-        # CV from applicant form submit → CVScraperJSON.extract_text_from_pdf
         extracted_text = extract_text_from_pdf(tmp_path)
         github_url, github_username = extract_github_url(github)
         if github_username:
@@ -270,19 +311,18 @@ async def applicant_profile_post(
         else:
             github_content = ""
         extracted_skills = extract_skills_tree(extracted_text, github_content)
-        
-        # Store in MongoDB
+        extracted_skills["user_id"] = user_id
+
         collection = get_skills_profile_collection()
         collection.update_one(
-            {"name": extracted_skills.get("Name", "Unknown")},
+            {"user_id": user_id},
             {"$set": extracted_skills},
-            upsert=True
+            upsert=True,
         )
-        
         pprint.pprint(extracted_skills)
     finally:
         os.unlink(tmp_path)
-    return RedirectResponse(url="/applicant?success=1", status_code=303)
+    return RedirectResponse(url="/applicant/tree", status_code=303)
 
 
 @app.post("/signup")
