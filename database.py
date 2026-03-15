@@ -98,12 +98,12 @@ def get_applications_db():
     """
     return get_client()["Applications"]
 
-# Applications Collection
+# Applications Collection (Jobs.ApplicationsCollection)
 def get_applications_collection():
     """
     Helper to get the 'Applications' collection.
-    Schema: { applicant_id (user_id), job_id (ObjectId str), status, applied_at, applicant_snapshot }
-    Indexes: unique (applicant_id, job_id), job_id, applicant_id
+    Schema: { user_id, company_id, job_id, job_title, status, applied_at, applicant_snapshot }
+    Indexes: unique (user_id, job_id), job_id, user_id
     """
     return get_job_db()["ApplicationsCollection"]
 

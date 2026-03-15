@@ -141,3 +141,146 @@
   width: 24px;
   height: 24px;
 }
+
+/* Apply page: success/error messages */
+.apply-message {
+  padding: 0.75rem 1.25rem;
+  margin: 0 24px 0;
+  font-size: 0.9375rem;
+  border-radius: 6px;
+}
+
+.apply-message-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.apply-message-error {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Apply page: job detail modal (central) */
+.apply-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0.2s, opacity 0.2s;
+}
+
+.apply-modal:not([hidden]) {
+  visibility: visible;
+  opacity: 1;
+}
+
+.apply-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.apply-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 920px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  padding: 1.75rem 2rem;
+  overflow-wrap: normal;
+}
+
+.apply-modal-title {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.apply-modal-body {
+  margin-bottom: 1.25rem;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+.apply-modal-field {
+  margin: 0 0 1rem;
+  font-size: 0.9375rem;
+  color: #333;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+.apply-modal-field strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #1a1a1a;
+}
+
+.apply-modal-field span,
+.apply-modal-field pre {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.apply-modal-field pre {
+  margin: 0;
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #555;
+}
+
+.apply-modal-form {
+  margin: 0;
+}
+
+.apply-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.apply-modal-btn-apply {
+  padding: 0.65rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+  background: #1a1a1a;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.apply-modal-btn-apply:hover {
+  background: #333;
+}
+
+.apply-modal-btn-close {
+  padding: 0.65rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.apply-modal-btn-close:hover {
+  background: #eee;
+}
+
+.apply-square-clickable {
+  cursor: pointer;
+}

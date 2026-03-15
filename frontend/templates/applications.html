@@ -21,7 +21,7 @@
     {% if applications %}
       {% for app in applications %}
       <div style="border:1px solid #e5e5e5; border-radius:8px; padding:1.25rem; margin-bottom:1rem;">
-        <p><strong>Applicant ID:</strong> {{ app.applicant_id }}</p>
+        <p><strong>Applicant ID:</strong> {{ app.user_id or app.applicant_id }}</p>
         <p><strong>Status:</strong> {{ app.status }}</p>
         <p><strong>Applied at:</strong> {{ app.applied_at }}</p>
         {% if app.applicant_snapshot %}

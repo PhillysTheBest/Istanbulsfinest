@@ -51,12 +51,12 @@ async def create_indexes():
     try:
         apps = get_applications_collection()
         apps.create_index(
-            [("applicant_id", ASCENDING), ("job_id", ASCENDING)],
+            [("user_id", ASCENDING), ("job_id", ASCENDING)],
             unique=True,
-            name="unique_applicant_job",
+            name="unique_user_job",
         )
         apps.create_index([("job_id", ASCENDING)], name="idx_job_id")
-        apps.create_index([("applicant_id", ASCENDING)], name="idx_applicant_id")
+        apps.create_index([("user_id", ASCENDING)], name="idx_user_id")
     except Exception as e:
         print(f"Warning: could not create indexes: {e}")
 
@@ -133,7 +133,7 @@ async def recruiter_page(
 
 
 def _get_random_jobs_with_company_names(n: int = 5):
-    """Fetch n random jobs from JobsData and resolve company name for each."""
+    """Fetch n random jobs from JobsData and resolve company name for each. Full details for modal."""
     jobs_coll = get_job_collection()
     companies_coll = get_companies_collection()
     pipeline = [{"$sample": {"size": n}}]
@@ -147,24 +147,32 @@ def _get_random_jobs_with_company_names(n: int = 5):
                 company_name = company.get("name", "")
         except (TypeError, ValueError):
             pass
+        created = job.get("created_at")
+        created_str = created.isoformat() + "Z" if hasattr(created, "isoformat") else str(created) if created else ""
         result.append({
             "id": str(job["_id"]),
+            "company_id": str(job.get("company_id", "")),
             "title": job.get("title", ""),
             "preview": job.get("preview", ""),
+            "qualifications": job.get("qualifications", ""),
             "company_name": company_name,
+            "created_at": created_str,
         })
     return result
 
 
 @app.get("/apply", response_class=HTMLResponse)
-async def apply_page(request: Request):
+async def apply_page(
+    request: Request,
+    applied: str | None = None,
+    error: str | None = None,
+):
     jobs = _get_random_jobs_with_company_names(5)
-    # Pad to exactly 5 for the template (None for empty slots)
     while len(jobs) < 5:
         jobs.append(None)
     return templates.TemplateResponse(
         "apply.html",
-        {"request": request, "jobs": jobs},
+        {"request": request, "jobs": jobs, "applied": applied is not None, "error": error},
     )
 
 
@@ -286,19 +294,26 @@ async def recruiter_create_job(
 
 
 @app.post("/applications")
-async def create_application(
-    request: Request,
-    job_id: str = Form(...),
-    applicant_id: str = Form(...),
-):
+async def create_application(request: Request, job_id: str = Form(...)):
     """
-    Create an application for a job. Stores an applicant_snapshot from their
-    current SkillsProfile. applicant_id is a placeholder until session auth is added.
+    Create an application for a job. Uses session user_id (applicant).
+    Stores in Jobs.ApplicationsCollection: user_id, company_id, job_id, job_title, etc.
     """
-    try:
-        skills_col = get_skills_profile_collection()
-        profile_doc = skills_col.find_one({"user_id": applicant_id}, {"_id": 0})
+    user_id = request.session.get("user_id")
+    if request.session.get("role") != "applicant" or not user_id:
+        return RedirectResponse(url="/login", status_code=303)
 
+    try:
+        jobs_coll = get_job_collection()
+        job = jobs_coll.find_one({"_id": ObjectId(job_id)})
+        if not job:
+            return RedirectResponse(url="/apply?error=job_not_found", status_code=303)
+
+        company_id = str(job.get("company_id", ""))
+        job_title = job.get("title", "")
+
+        skills_col = get_skills_profile_collection()
+        profile_doc = skills_col.find_one({"user_id": user_id}, {"_id": 0})
         applicant_snapshot = {}
         if profile_doc:
             applicant_snapshot = {
@@ -309,16 +324,18 @@ async def create_application(
 
         apps = get_applications_collection()
         apps.insert_one({
-            "applicant_id": applicant_id,
+            "user_id": user_id,
+            "company_id": company_id,
             "job_id": job_id,
+            "job_title": job_title,
             "status": "pending",
             "applied_at": datetime.datetime.utcnow(),
             "applicant_snapshot": applicant_snapshot,
         })
     except pymongo_errors.DuplicateKeyError:
-        return {"error": "Already applied to this job."}
+        return RedirectResponse(url="/apply?error=already_applied", status_code=303)
     except Exception as e:
-        return {"error": str(e)}
+        return RedirectResponse(url="/apply?error=1", status_code=303)
 
     return RedirectResponse(url="/apply?applied=1", status_code=303)
 
