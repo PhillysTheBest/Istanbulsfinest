@@ -22,3 +22,8 @@ fpdf
 starlette-sessions
 itsdangerous
 elevenlabs
+
+# Solana Integration
+solana
+solders
+
