@@ -9,7 +9,7 @@ from google import genai
 from google.genai import types
 
 # Configure the API keys using environment variables 
-api_key = "AIzaSyBkewlNpH2VxgY6WyAvVGFWT76clZzvaPQ"
+api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
     raise ValueError("API KEY missing. Suggestion: $env:API_KEY=\"<your_full_key>\"")

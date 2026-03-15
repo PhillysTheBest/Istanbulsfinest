@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interview Prep – CV Skill Tree</title>
+  <link rel="stylesheet" href="/static/index.css">
+  <link rel="stylesheet" href="/static/applicant-style-pages.css">
+  <style>
+    .prep-container {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    /* Loading state */
+    .prep-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 3rem 1rem;
+      color: #94a3b8;
+      text-align: center;
+    }
+
+    .prep-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(165, 180, 252, 0.15);
+      border-top-color: #a5b4fc;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .prep-loading-text {
+      font-size: 1rem;
+      color: #94a3b8;
+    }
+
+    .prep-loading-sub {
+      font-size: 0.875rem;
+      color: #64748b;
+      max-width: 380px;
+    }
+
+    /* Result state */
+    .prep-result {
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+
+    .prep-section {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 1.5rem;
+    }
+
+    .prep-section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 0.75rem;
+    }
+
+    .prep-script-text {
+      font-size: 0.9375rem;
+      line-height: 1.7;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .prep-audio-player {
+      width: 100%;
+      accent-color: #a5b4fc;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .prep-audio-hint {
+      margin-top: 0.6rem;
+      font-size: 0.8125rem;
+      color: #64748b;
+    }
+
+    /* Error state */
+    .prep-error {
+      background: rgba(185, 28, 28, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 10px;
+      padding: 1.5rem;
+      color: #fca5a5;
+      font-size: 0.9375rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .prep-error-title {
+      font-weight: 600;
+      color: #fecaca;
+    }
+
+    .prep-retry-btn {
+      align-self: flex-start;
+      padding: 0.55rem 1.1rem;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: #fff;
+      background: #4338ca;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .prep-retry-btn:hover {
+      background: #5b21b6;
+    }
+
+    .prep-regenerate-wrap {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .prep-regenerate-btn {
+      padding: 0.55rem 1.1rem;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: #e2e8f0;
+      background: rgba(51, 65, 85, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .prep-regenerate-btn:hover {
+      background: #475569;
+    }
+
+    .prep-regenerate-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body class="applicant-style-page">
+  <main class="main-content">
+    <div id="prep-root" class="prep-container" data-job-id="{{ job_id | e }}">
+      <h1>Interview Prep{% if job_title %} — {{ job_title }}{% endif %}</h1>
+
+      <!-- Loading -->
+      <div id="prep-loading" class="prep-loading">
+        <div class="prep-spinner" role="status" aria-label="Loading"></div>
+        <p class="prep-loading-text">Generating your script and audio…</p>
+        <p class="prep-loading-sub">Gemini is crafting your personalised script, then ElevenLabs will turn it into
+          audio. This usually takes 15–30 seconds.</p>
+      </div>
+
+      <!-- Error -->
+      <div id="prep-error" class="prep-error" hidden>
+        <p class="prep-error-title">Something went wrong</p>
+        <p id="prep-error-msg"></p>
+        <button type="button" class="prep-retry-btn" id="prep-retry-btn">Try again</button>
+      </div>
+
+      <!-- Result -->
+      <div id="prep-result" class="prep-result" hidden>
+        <div class="prep-section">
+          <div class="prep-section-label">Your script</div>
+          <p id="prep-script-text" class="prep-script-text"></p>
+        </div>
+        <div class="prep-section">
+          <div class="prep-section-label">Listen &amp; practise</div>
+          <audio id="prep-audio" class="prep-audio-player" controls></audio>
+          <p class="prep-audio-hint">Listen to how the script sounds, then practise saying it aloud in your own voice.
+          </p>
+        </div>
+        <div class="prep-regenerate-wrap">
+          <button type="button" class="prep-regenerate-btn" id="prep-regenerate-btn">Regenerate script and
+            audio</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <a href="/applicant/applied-jobs" class="back-btn" aria-label="Back to applied jobs">← Back</a>
+
+  <script>
+    (function () {
+      var root = document.getElementById('prep-root');
+      var JOB_ID = root ? root.getAttribute('data-job-id') || '' : '';
+
+      var loadingEl = document.getElementById('prep-loading');
+    var errorEl = document.getElementById('prep-error');
+    var errorMsg = document.getElementById('prep-error-msg');
+    var resultEl = document.getElementById('prep-result');
+    var scriptEl = document.getElementById('prep-script-text');
+    var audioEl = document.getElementById('prep-audio');
+    var retryBtn = document.getElementById('prep-retry-btn');
+    var regenBtn = document.getElementById('prep-regenerate-btn');
+
+    function setRegenDisabled(disabled) {
+      if (regenBtn) regenBtn.disabled = disabled;
+    }
+
+    function showLoading() {
+      loadingEl.removeAttribute('hidden');
+      errorEl.setAttribute('hidden', '');
+      resultEl.setAttribute('hidden', '');
+      setRegenDisabled(true);
+    }
+
+    function showError(msg) {
+      loadingEl.setAttribute('hidden', '');
+      errorEl.removeAttribute('hidden');
+      resultEl.setAttribute('hidden', '');
+      errorMsg.textContent = msg || 'An unexpected error occurred. Please try again.';
+    }
+
+    function showResult(script, audioBase64) {
+      loadingEl.setAttribute('hidden', '');
+      errorEl.setAttribute('hidden', '');
+      resultEl.removeAttribute('hidden');
+      scriptEl.textContent = script;
+      audioEl.src = 'data:audio/mpeg;base64,' + audioBase64;
+      setRegenDisabled(false);
+    }
+
+    function fetchResult(regenerate) {
+      showLoading();
+      var url = '/applicant/interview-prep/result?job_id=' + encodeURIComponent(JOB_ID);
+      if (regenerate) url += '&regenerate=1';
+      fetch(url)
+        .then(function (res) {
+          if (!res.ok) {
+            return res.json().then(function (body) {
+              throw new Error(body.error || ('Server error ' + res.status));
+            }).catch(function (e) {
+              if (e instanceof SyntaxError) throw new Error('Server error ' + res.status);
+              throw e;
+            });
+          }
+          return res.json();
+        })
+        .then(function (data) {
+          if (data.error) { showError(data.error); return; }
+          showResult(data.script, data.audio_base64);
+        })
+        .catch(function (err) {
+          showError(err.message || 'Network error. Please check your connection and try again.');
+        });
+    }
+
+    function generate() { fetchResult(false); }
+    function regenerate() { fetchResult(true); }
+
+    if (retryBtn) retryBtn.addEventListener('click', generate);
+    if (regenBtn) regenBtn.addEventListener('click', regenerate);
+
+    generate();
+  })();
+  </script>
+</body>
+
+</html>

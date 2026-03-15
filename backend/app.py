@@ -7,7 +7,7 @@ import tempfile
 import uuid
 from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from starlette.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 import hashlib
@@ -28,6 +28,7 @@ PROJECT_ROOT = os.path.dirname(BASE_DIR)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 from CVScraperJSON import extract_github_url, extract_skills_tree, extract_text_from_pdf, scrape_github_profile
+from backend.interview_prep import generate_interview_script, generate_audio_base64
 
 app = FastAPI(title="CV Skill Tree", description="Skill Tree for CVs")
 static_dir = os.path.join(BASE_DIR, "../frontend/static")
@@ -477,3 +478,101 @@ async def list_applications(request: Request, job_id: str):
         "applications.html",
         {"request": request, "job_id": job_id, "applications": application_list},
     )
+
+
+@app.get("/applicant/interview-prep", response_class=HTMLResponse)
+async def interview_prep_page(request: Request, job_id: str | None = None):
+    """Render the interview prep page for a specific applied job."""
+    if request.session.get("role") != "applicant" or not request.session.get("user_id"):
+        return RedirectResponse(url="/login", status_code=303)
+    if not job_id:
+        return RedirectResponse(url="/applicant/applied-jobs", status_code=303)
+    user_id = request.session["user_id"]
+    apps = get_applications_collection()
+    application = apps.find_one({"user_id": user_id, "job_id": job_id})
+    if not application:
+        return RedirectResponse(url="/applicant/applied-jobs", status_code=303)
+    job_title = application.get("job_title", "")
+    return templates.TemplateResponse(
+        "interview_prep.html",
+        {"request": request, "job_id": job_id, "job_title": job_title},
+    )
+
+
+@app.get("/applicant/interview-prep/result")
+async def interview_prep_result(
+    request: Request,
+    job_id: str | None = None,
+    regenerate: str | None = None,
+):
+    """Return cached script + audio for job_id, or generate and store them. Use regenerate=1 to force regeneration."""
+    if request.session.get("role") != "applicant" or not request.session.get("user_id"):
+        return JSONResponse({"error": "Not authenticated."}, status_code=401)
+    if not job_id:
+        return JSONResponse({"error": "job_id is required."}, status_code=400)
+    user_id = request.session["user_id"]
+    force_regenerate = regenerate in ("1", "true", "yes")
+
+    apps_coll = get_applications_collection()
+    application = apps_coll.find_one({"user_id": user_id, "job_id": job_id})
+    if not application:
+        return JSONResponse({"error": "Application not found."}, status_code=403)
+
+    # Return cached if present and not regenerating
+    if not force_regenerate:
+        cached_script = application.get("interview_prep_script")
+        cached_audio = application.get("interview_prep_audio_base64")
+        if cached_script and cached_audio:
+            return JSONResponse({"script": cached_script, "audio_base64": cached_audio})
+
+    # Load job details
+    try:
+        jobs_coll = get_job_collection()
+        job = jobs_coll.find_one({"_id": ObjectId(job_id)})
+    except Exception:
+        job = None
+    if not job:
+        return JSONResponse({"error": "Job not found."}, status_code=404)
+
+    # Load applicant skills profile
+    skills_coll = get_skills_profile_collection()
+    profile = skills_coll.find_one({"user_id": user_id})
+    applicant_name = ""
+    skills_dict = {}
+    if profile:
+        applicant_name = profile.get("Name", "")
+        skills_dict = profile.get("Skills", {})
+
+    # Generate script via Gemini
+    try:
+        script = generate_interview_script(
+            job_title=job.get("title", ""),
+            job_preview=job.get("preview", ""),
+            job_qualifications=job.get("qualifications", ""),
+            applicant_name=applicant_name,
+            skills_dict=skills_dict,
+        )
+    except Exception as exc:
+        return JSONResponse({"error": f"Script generation failed: {exc}"}, status_code=502)
+
+    # Generate audio via ElevenLabs
+    try:
+        audio_base64 = generate_audio_base64(script)
+    except RuntimeError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=502)
+    except Exception as exc:
+        return JSONResponse({"error": f"Audio generation failed: {exc}"}, status_code=502)
+
+    # Store in application document for future visits
+    apps_coll.update_one(
+        {"user_id": user_id, "job_id": job_id},
+        {
+            "$set": {
+                "interview_prep_script": script,
+                "interview_prep_audio_base64": audio_base64,
+                "interview_prep_generated_at": datetime.datetime.utcnow(),
+            }
+        },
+    )
+
+    return JSONResponse({"script": script, "audio_base64": audio_base64})

@@ -10,23 +10,6 @@
 </head>
 
 <body class="applicant-style-page">
-  <div class="topbar-wrapper">
-    <input type="checkbox" id="topbar-toggle" class="topbar-toggle" aria-hidden="true">
-    <div class="topbar">
-      <div class="topbar-strip">
-        <label for="topbar-toggle" class="topbar-toggle-btn">
-          <span class="icon-open" aria-hidden="true">▼</span>
-          <span class="icon-close" aria-hidden="true">▲</span>
-        </label>
-      </div>
-      <div class="topbar-content">
-        <div class="topbar-content-inner">
-          Jobs you have applied to. Click a card to view details.
-        </div>
-      </div>
-    </div>
-  </div>
-
   <main class="main-content">
     <h1>Applied Jobs</h1>
 
@@ -95,6 +78,7 @@
         previewEl.textContent = square.getAttribute('data-preview') || '';
         qualificationsEl.textContent = square.getAttribute('data-qualifications') || '';
         createdEl.textContent = formatDate(square.getAttribute('data-created-at'));
+        modal.dataset.jobId = square.getAttribute('data-job-id') || '';
         modal.removeAttribute('hidden');
       }
 
@@ -109,7 +93,9 @@
       if (closeBtn2) closeBtn2.addEventListener('click', closeModal);
       if (backdrop) backdrop.addEventListener('click', closeModal);
       document.getElementById('applied-modal-interview-prep').addEventListener('click', function () {
-        // Interview prep – function to be defined later
+        var jobId = modal.dataset.jobId;
+        if (!jobId) return;
+        window.location.href = '/applicant/interview-prep?job_id=' + encodeURIComponent(jobId);
       });
     })();
   </script>
