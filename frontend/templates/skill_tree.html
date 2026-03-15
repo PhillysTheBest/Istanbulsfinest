@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,7 +19,8 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: var(--font-main);
-            overflow: hidden; /* D3 will handle scrolling/zoom */
+            overflow: hidden;
+            /* D3 will handle scrolling/zoom */
             display: flex;
             flex-direction: column;
             height: 100vh;
@@ -76,7 +78,7 @@
         .node text {
             font-size: 12px;
             fill: #cbd5e1;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
             pointer-events: none;
         }
 
@@ -100,7 +102,6 @@
             z-index: 100;
         }
 
-        /* Bottom-right action buttons over the tree */
         .tree-bottom-buttons {
             position: fixed;
             right: 24px;
@@ -110,28 +111,29 @@
             align-items: center;
             z-index: 20;
         }
+
         .tree-bottom-buttons a {
             padding: 12px 20px;
             font-size: 0.9375rem;
             font-weight: 500;
             color: #fff;
             background: #1a1a1a;
-            border: none;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             text-decoration: none;
-            display: inline-block;
+            transition: background 0.2s;
         }
+
         .tree-bottom-buttons a:hover {
             background: #333;
         }
     </style>
 </head>
+
 <body>
     <div class="header">
         <h1>{{ profile.Name }}'s Skill Tree</h1>
-        <a href="/logout" class="back-btn">Log out</a>
+        <a href="/login" class="back-btn">← Logout</a>
     </div>
 
     <div id="tree-container"></div>
@@ -139,13 +141,14 @@
 
     <div class="tree-bottom-buttons">
         <a href="/applicant/applied-jobs">Applied jobs</a>
-        <a href="/apply">Search quests</a>
+        <a href="/apply">Search jobs</a>
     </div>
 
+    <script type="application/json" id="skill-tree-profile">{{ profile | tojson }}</script>
     <script>
-        // Data injected from FastAPI/Jinja
-        const rawData = {{ profile.Skills | tojson }};
-        const candidateName = "{{ profile.Name }}";
+        const profileData = JSON.parse(document.getElementById('skill-tree-profile').textContent);
+        const rawData = profileData.Skills || {};
+        const candidateName = profileData.Name || 'Applicant';
 
         // Domain colors mapping
         const domainColors = {
@@ -167,14 +170,14 @@
         // Convert the flat object to a D3-friendly hierarchical structure
         function transformData(data) {
             const root = { name: candidateName, children: [] };
-            
+
             for (const [domain, languages] of Object.entries(data)) {
                 const domainNode = { name: domain, children: [] };
                 for (const [language, categories] of Object.entries(languages)) {
                     const langNode = { name: language, children: [] };
                     for (const [category, skills] of Object.entries(categories)) {
-                        const catNode = { 
-                            name: category, 
+                        const catNode = {
+                            name: category,
                             children: skills.map(s => ({ name: s }))
                         };
                         langNode.children.push(catNode);
@@ -209,7 +212,7 @@
             .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
 
         let root = d3.hierarchy(dataNode);
-        
+
         // Collapse all nodes except root and first level initially
         root.descendants().forEach((d, i) => {
             d._children = d.children;
@@ -296,7 +299,7 @@
         }
 
         update(root);
-        
+
         window.addEventListener('resize', () => {
             const width = window.innerWidth;
             const height = window.innerHeight - 80;
@@ -305,4 +308,5 @@
 
     </script>
 </body>
+
 </html>

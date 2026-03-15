@@ -4,27 +4,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Search quests – CV Skill Tree</title>
+  <title>Search Jobs - CV Skill Tree</title>
   <link rel="stylesheet" href="/static/index.css">
   <link rel="stylesheet" href="/static/applicant-style-pages.css">
 </head>
 
 <body class="applicant-style-page">
   <main class="main-content">
-    <h1>Search quests</h1>
+    <h1>Search jobs</h1>
 
     {% if applied %}
     <div class="page-message page-message-success" role="alert">Application submitted.</div>
     {% endif %}
     {% if error %}
     <div class="page-message page-message-error" role="alert">
-      {% if error == 'already_applied' %}You have already applied to this job.{% elif error == 'job_not_found' %}Job not found.{% else %}Something went wrong. Please try again.{% endif %}
+      {% if error == 'already_applied' %}You have already applied to this job.{% elif error == 'job_not_found' %}Job not
+      found.{% else %}Something went wrong. Please try again.{% endif %}
     </div>
     {% endif %}
 
     <div class="job-grid">
       {% for job in jobs %}
-      <div class="job-square{% if job %} job-square-clickable{% endif %}" data-index="{{ loop.index0 }}" data-job-id="{{ job.id if job else '' }}" data-job-title="{{ (job.title if job else '')|e }}" data-company-name="{{ (job.company_name if job else '')|e }}" data-preview="{{ (job.preview if job else '')|e }}" data-qualifications="{{ (job.qualifications if job else '')|e }}" data-created-at="{{ job.created_at if job else '' }}" data-company-id="{{ job.company_id if job else '' }}" aria-label="{{ (job.title if job else 'Job ' ~ loop.index)|e }}">
+      <div class="job-square{% if job %} job-square-clickable{% endif %}" data-index="{{ loop.index0 }}"
+        data-job-id="{{ job.id if job else '' }}" data-job-title="{{ (job.title if job else '')|e }}"
+        data-company-name="{{ (job.company_name if job else '')|e }}"
+        data-preview="{{ (job.preview if job else '')|e }}"
+        data-qualifications="{{ (job.qualifications if job else '')|e }}"
+        data-created-at="{{ job.created_at if job else '' }}" data-company-id="{{ job.company_id if job else '' }}"
+        aria-label="{{ (job.title if job else 'Job ' ~ loop.index)|e }}">
         {% if job %}
         <div class="job-square-title">{{ job.title }}</div>
         <div class="job-square-company">{{ job.company_name }}</div>
@@ -39,13 +46,15 @@
 
   <a href="/applicant/tree" class="back-btn" aria-label="Back to skill tree">← Back</a>
   <a href="/apply" class="refresh-btn" id="apply-refresh" aria-label="Refresh to load new jobs">
-    <svg class="apply-refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M23 4v6h-6M1 20v-6h6"/>
-      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+    <svg class="apply-refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M23 4v6h-6M1 20v-6h6" />
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
     </svg>
   </a>
 
-  <div id="apply-job-modal" class="modal-overlay" role="dialog" aria-labelledby="apply-modal-title" aria-modal="true" hidden>
+  <div id="apply-job-modal" class="modal-overlay" role="dialog" aria-labelledby="apply-modal-title" aria-modal="true"
+    hidden>
     <div class="modal-backdrop" id="apply-modal-backdrop"></div>
     <div class="modal-box">
       <button type="button" class="modal-close-btn" id="apply-modal-close" aria-label="Close">×</button>
@@ -54,7 +63,9 @@
         <p class="modal-field"><strong>Title</strong><span id="apply-modal-title-text"></span></p>
         <p class="modal-field"><strong>Company</strong><span id="apply-modal-company"></span></p>
         <p class="modal-field"><strong>Preview</strong><span id="apply-modal-preview"></span></p>
-        <p class="modal-field"><strong>Qualifications</strong><pre id="apply-modal-qualifications"></pre></p>
+        <p class="modal-field"><strong>Qualifications</strong>
+        <pre id="apply-modal-qualifications"></pre>
+        </p>
         <p class="modal-field"><strong>Posted</strong><span id="apply-modal-created"></span></p>
       </div>
       <form action="/applications" method="post" style="margin:0;">
