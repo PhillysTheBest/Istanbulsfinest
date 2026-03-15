@@ -214,7 +214,7 @@ async def skill_tree_page(request: Request):
     if not user_id:
         return RedirectResponse(url="/login", status_code=303)
     collection = get_skills_profile_collection()
-    profile = collection.find_one({"user_id": user_id})
+    profile = collection.find_one({"user_id": user_id}, {"_id": 0})
     if not profile:
         return RedirectResponse(url="/applicant/upload", status_code=303)
     return templates.TemplateResponse(
