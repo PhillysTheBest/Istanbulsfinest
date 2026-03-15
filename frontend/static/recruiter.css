@@ -1,0 +1,107 @@
+/* Recruiter page: Add job button and modal */
+
+.recruiter-add-job-btn {
+  padding: 0.65rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+  background: #1a1a1a;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.recruiter-add-job-btn:hover {
+  background: #333;
+}
+
+.recruiter-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0.2s, opacity 0.2s;
+}
+
+.recruiter-modal:not([hidden]) {
+  visibility: visible;
+  opacity: 1;
+}
+
+.recruiter-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.recruiter-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.recruiter-modal-title {
+  margin: 0 0 1.25rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.recruiter-modal-card textarea {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  resize: vertical;
+}
+
+.recruiter-modal-card textarea:focus {
+  outline: none;
+  border-color: #999;
+}
+
+.recruiter-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.recruiter-modal-actions button[type="submit"] {
+  padding: 0.65rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+  background: #1a1a1a;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.recruiter-modal-actions button[type="submit"]:hover {
+  background: #333;
+}
+
+.recruiter-modal-cancel {
+  padding: 0.65rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.recruiter-modal-cancel:hover {
+  background: #eee;
+}

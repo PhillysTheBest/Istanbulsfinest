@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login</title>
+  <link rel="stylesheet" href="/static/index.css">
   <link rel="stylesheet" href="/static/login.css">
 </head>
 <body>
-  <div class="auth-page">
-    <section class="auth-card">
+  <a href="/" class="back-btn" aria-label="Back">← Back</a>
+  <div class="auth-page {% if signup_success or signup_error %}auth-page--signup{% endif %}" id="auth-page">
+    <section class="auth-card login-card" {% if signup_success or signup_error %}hidden{% endif %}>
       <h1>Login</h1>
       {% if error %}
       <div class="message error" role="alert">{{ error }}</div>
@@ -22,11 +24,12 @@
 
         <button type="submit">Sign in</button>
       </form>
+      <p class="auth-switch">
+        <button type="button" class="auth-switch-btn" id="show-signup" aria-label="Switch to sign up">Create an account</button>
+      </p>
     </section>
 
-    <p class="auth-divider">or</p>
-
-    <section class="auth-card signup-card">
+    <section class="auth-card signup-card" id="signup-card" {% if not signup_success and not signup_error %}hidden{% endif %}>
       <h2>Sign up</h2>
       {% if signup_success %}
       <div class="message success" role="alert">{{ signup_success }}</div>
@@ -47,9 +50,53 @@
           <option value="recruiter">Recruiter</option>
         </select>
 
+        <div id="company-field" hidden>
+          <label for="signup-company">Company name</label>
+          <input type="text" id="signup-company" name="company_name" autocomplete="organization" placeholder="Your company name">
+        </div>
+
         <button type="submit">Create account</button>
       </form>
+      <p class="auth-switch">
+        <button type="button" class="auth-switch-btn" id="show-login" aria-label="Switch to login">Already have an account? Sign in</button>
+      </p>
     </section>
   </div>
+  <script>
+    (function () {
+      var page = document.getElementById('auth-page');
+      var loginCard = page.querySelector('.login-card');
+      var signupCard = document.getElementById('signup-card');
+      var showSignup = document.getElementById('show-signup');
+      var showLogin = document.getElementById('show-login');
+      if (!page || !signupCard || !showSignup || !showLogin) return;
+
+      showSignup.addEventListener('click', function () {
+        loginCard.setAttribute('hidden', '');
+        signupCard.removeAttribute('hidden');
+        page.classList.add('auth-page--signup');
+      });
+
+      showLogin.addEventListener('click', function () {
+        signupCard.setAttribute('hidden', '');
+        loginCard.removeAttribute('hidden');
+        page.classList.remove('auth-page--signup');
+      });
+
+      var roleSelect = document.getElementById('signup-role');
+      var companyField = document.getElementById('company-field');
+      if (roleSelect && companyField) {
+        function toggleCompanyField() {
+          if (roleSelect.value === 'recruiter') {
+            companyField.removeAttribute('hidden');
+          } else {
+            companyField.setAttribute('hidden', '');
+          }
+        }
+        roleSelect.addEventListener('change', toggleCompanyField);
+        toggleCompanyField();
+      }
+    })();
+  </script>
 </body>
 </html>

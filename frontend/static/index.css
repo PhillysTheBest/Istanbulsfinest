@@ -105,11 +105,18 @@ body {
   color: #1a1a1a;
 }
 
-/* Bottom-right button */
-.bottom-right-btn {
+/* Bottom-right buttons container */
+.bottom-buttons {
   position: fixed;
   right: 24px;
   bottom: 24px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+/* Bottom-right button */
+.bottom-right-btn {
   padding: 12px 20px;
   font-size: 0.9375rem;
   font-weight: 500;
@@ -119,8 +126,35 @@ body {
   border-radius: 8px;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  text-decoration: none;
+  display: inline-block;
 }
 
 .bottom-right-btn:hover {
+  background: #333;
+}
+
+/* Back button – fixed bottom left, same style as black buttons (apply, applied-jobs, applications, login) */
+.back-btn {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 12px 20px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #fff;
+  background: #1a1a1a;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.back-btn:hover {
   background: #333;
 }

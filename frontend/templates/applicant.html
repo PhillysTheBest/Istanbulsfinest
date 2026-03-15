@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
   <link rel="stylesheet" href="/static/index.css">
   <link rel="stylesheet" href="/static/applicant.css">
 </head>
+
 <body>
   {% if success %}
   <div class="success-popup" role="alert">
@@ -36,10 +38,14 @@
     <h1>CV Skill Tree</h1>
   </main>
 
-  <a href="#profile-modal" class="bottom-right-btn">Submit CV</a>
+  <div class="bottom-buttons">
+    <a href="/applicant/applied-jobs" class="bottom-right-btn">Applied jobs</a>
+    <a href="/apply" class="bottom-right-btn">Search quests</a>
+    <a href="#submission-modal" class="bottom-right-btn">Check stats</a>
+  </div>
 
   <!-- Modal: open via #profile-modal -->
-  <div id="profile-modal" class="modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+  <div id="submission-modal" class="modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
     <div class="modal-backdrop">
       <a href="/applicant" class="modal-close-area" aria-label="Close modal"></a>
     </div>
@@ -115,7 +121,7 @@
           dt.items.add(file);
           fileInput.files = dt.files;
           updateAcceptedDisplay();
-        } catch (err) {}
+        } catch (err) { }
       }
 
       fileInput.addEventListener('change', updateAcceptedDisplay);
@@ -138,4 +144,5 @@
     })();
   </script>
 </body>
+
 </html>

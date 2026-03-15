@@ -2,14 +2,72 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recruiter</title>
-    <link rel="stylesheet" href="/static/recruiter.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recruiter</title>
+  <link rel="stylesheet" href="/static/index.css">
+  <link rel="stylesheet" href="/static/login.css">
+  <link rel="stylesheet" href="/static/recruiter.css">
 </head>
 
 <body>
-    <h1>Recruiter</h1>
+  <h1>Recruiter</h1>
+
+  {% if job_added %}
+  <div class="message success" role="alert">Job added successfully.</div>
+  {% endif %}
+  {% if job_error %}
+  <div class="message error" role="alert">Could not add job. Please try again.</div>
+  {% endif %}
+
+  <p>
+    <button type="button" class="recruiter-add-job-btn" id="open-add-job" aria-haspopup="dialog" aria-expanded="false">Add job</button>
+  </p>
+
+  <div id="add-job-modal" class="recruiter-modal" role="dialog" aria-labelledby="add-job-title" aria-modal="true" hidden>
+    <div class="recruiter-modal-backdrop" id="add-job-backdrop"></div>
+    <div class="recruiter-modal-card auth-card">
+      <h2 id="add-job-title" class="recruiter-modal-title">Add job</h2>
+      <form action="/recruiter/jobs" method="post">
+        <label for="job-title">Job name</label>
+        <input type="text" id="job-title" name="title" required autocomplete="off">
+
+        <label for="job-preview">Preview</label>
+        <textarea id="job-preview" name="preview" rows="3" autocomplete="off"></textarea>
+
+        <label for="job-qualifications">Qualifications</label>
+        <textarea id="job-qualifications" name="qualifications" rows="4" autocomplete="off"></textarea>
+
+        <div class="recruiter-modal-actions">
+          <button type="submit">Add job</button>
+          <button type="button" class="recruiter-modal-cancel" id="close-add-job">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var openBtn = document.getElementById('open-add-job');
+      var closeBtn = document.getElementById('close-add-job');
+      var backdrop = document.getElementById('add-job-backdrop');
+      var modal = document.getElementById('add-job-modal');
+      if (!openBtn || !modal) return;
+
+      function openModal() {
+        modal.removeAttribute('hidden');
+        openBtn.setAttribute('aria-expanded', 'true');
+      }
+      function closeModal() {
+        modal.setAttribute('hidden', '');
+        openBtn.setAttribute('aria-expanded', 'false');
+      }
+
+      openBtn.addEventListener('click', openModal);
+      closeBtn.addEventListener('click', closeModal);
+      if (backdrop) backdrop.addEventListener('click', closeModal);
+    })();
+  </script>
 </body>
 
 </html>
