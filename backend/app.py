@@ -14,6 +14,7 @@ import hashlib
 from bson import ObjectId
 from pymongo import ASCENDING, errors as pymongo_errors
 from backend import login
+
 from database import (
     get_credentials_collection,
     get_companies_collection,
@@ -120,6 +121,19 @@ async def applicant_page(request: Request, success: str | None = None):
     )
 
 
+@app.get("/applicant/tree", response_class=HTMLResponse)
+async def skill_tree_page(request: Request):
+    # Fetch the latest profile for now (simple hackathon logic)
+    # In a real app, we'd filter by user_id/session
+    collection = get_skills_profile_collection()
+    profile = collection.find_one(sort=[("_id", -1)])
+    
+    if not profile:
+        return RedirectResponse(url="/applicant")
+        
+    return templates.TemplateResponse(
+        "skill_tree.html",
+        {"request": request, "profile": profile}
 def _get_applied_jobs_for_user(user_id: str):
     """Fetch all applications for user_id and return list with job title, company name, preview, applied_at, status."""
     apps_coll = get_applications_collection()
@@ -256,7 +270,15 @@ async def applicant_profile_post(
         else:
             github_content = ""
         extracted_skills = extract_skills_tree(extracted_text, github_content)
-        # TO-DO: store extracted_text, linkedin, github, portfolio (e.g. in DB)
+        
+        # Store in MongoDB
+        collection = get_skills_profile_collection()
+        collection.update_one(
+            {"name": extracted_skills.get("Name", "Unknown")},
+            {"$set": extracted_skills},
+            upsert=True
+        )
+        
         pprint.pprint(extracted_skills)
     finally:
         os.unlink(tmp_path)
