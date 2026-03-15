@@ -1,164 +1,140 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-zinc-950">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload your CV – CV Skill Tree</title>
-  <link rel="stylesheet" href="/static/applicant.css">
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: #0f172a;
-      color: #e2e8f0;
-      font-family: system-ui, -apple-system, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-    }
-    .upload-page-card {
-      width: 100%;
-      max-width: 420px;
-      background: rgba(30, 41, 59, 0.9);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: 2rem;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-    }
-    .upload-page-card h1 {
-      margin: 0 0 1.5rem;
-      font-size: 1.5rem;
-      font-weight: 600;
-      text-align: center;
-      background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .upload-page-card .profile-form label { color: #cbd5e1; }
-    .upload-page-card .profile-form .required { color: #f87171; }
-    .upload-page-card .profile-form .optional { color: #94a3b8; }
-    .upload-page-card .profile-form input[type="url"] {
-      background: #1e293b;
-      border-color: rgba(255, 255, 255, 0.15);
-      color: #e2e8f0;
-    }
-    .upload-page-card .drop-zone {
-      background: #1e293b;
-      border-color: rgba(255, 255, 255, 0.2);
-    }
-    .upload-page-card .drop-zone:hover,
-    .upload-page-card .drop-zone--over {
-      border-color: #64748b;
-      background: #334155;
-    }
-    .upload-page-card .drop-zone-prompt { color: #94a3b8; }
-    .upload-page-card .profile-submit {
-      margin-top: 0.75rem;
-      background: #4338ca;
-    }
-    .upload-page-card .profile-submit:hover { background: #5b21b6; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload CV - Istanbulsfinest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        [hidden] { display: none !important; }
+        .drop-zone--over { border-color: #6366f1 !important; background-color: rgba(99, 102, 241, 0.05); }
+    </style>
 </head>
 
-<body>
-  <div class="upload-page-card">
-    <h1>Upload your CV to continue</h1>
-    <p style="text-align: center; color: #94a3b8; font-size: 0.9375rem; margin: 0 0 1.5rem;">
-      We'll analyze your CV and build your skill tree. You need to do this once after logging in.
-    </p>
-
-    <form action="/applicant/profile" method="post" enctype="multipart/form-data" class="profile-form">
-      <div class="form-group">
-        <label for="cv-file">CV (PDF) <span class="required">required</span></label>
-        <div class="drop-zone" id="drop-zone">
-          <input type="file" id="cv-file" name="cv" accept=".pdf,application/pdf" required aria-required="true">
-          <label for="cv-file" class="drop-zone-label">
-            <span class="drop-zone-prompt" id="drop-zone-prompt">Drag and drop your CV here, or click to choose</span>
-            <span class="drop-zone-accepted" id="drop-zone-accepted" aria-live="polite">
-              <span class="drop-zone-check" aria-hidden="true">✓</span>
-              <span class="drop-zone-filename" id="cv-filename"></span>
-              <button type="button" class="drop-zone-remove" id="cv-remove" aria-label="Remove file">Remove</button>
-            </span>
-          </label>
+<body class="h-full">
+    <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+        <div class="sm:mx-auto sm:w-full sm:max-w-xl">
+            <h2 class="text-center text-3xl font-bold tracking-tight text-white">Upload your <span class="text-indigo-500">Professional Identity</span></h2>
+            <p class="mt-4 text-center text-sm text-zinc-400">Verifiable skills start here. We'll parse your CV and anchor it to the Solana blockchain.</p>
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="linkedin">LinkedIn profile <span class="optional">optional</span></label>
-        <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/..." autocomplete="url">
-      </div>
+        <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-xl">
+            <form action="/applicant/profile" method="POST" enctype="multipart/form-data" class="space-y-8 bg-zinc-900/50 p-8 rounded-2xl border border-zinc-800 shadow-2xl">
+                
+                <!-- CV UPLOAD ZONE -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium leading-6 text-white">CV (PDF)</label>
+                    <div id="drop-zone" class="relative group mt-2 flex justify-center rounded-xl border border-dashed border-zinc-700 px-6 py-10 transition-all hover:border-zinc-500 cursor-pointer">
+                        <div class="text-center space-y-4">
+                            <svg class="mx-auto h-12 w-12 text-zinc-500 group-hover:text-indigo-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                            </svg>
+                            <div class="flex flex-col text-sm leading-6 text-zinc-400">
+                                <span id="prompt-text" class="font-semibold text-indigo-400 group-hover:text-indigo-300">Click to upload</span>
+                                <span id="filename-display" class="hidden text-white font-medium truncate max-w-xs"></span>
+                                <p class="pl-1">or drag and drop</p>
+                            </div>
+                            <p class="text-xs leading-5 text-zinc-500">PDF up to 10MB</p>
+                        </div>
+                        <input id="cv-file" name="cv" type="file" accept=".pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required>
+                    </div>
+                </div>
 
-      <div class="form-group">
-        <label for="github">GitHub link <span class="optional">optional</span></label>
-        <input type="url" id="github" name="github" placeholder="https://github.com/..." autocomplete="url">
-      </div>
+                <!-- WALLET SECTION -->
+                <div class="pt-4 border-t border-zinc-800">
+                    <label for="solana_wallet" class="block text-sm font-medium leading-6 text-white flex justify-between">
+                        Solana Wallet Address
+                        <span class="text-indigo-400 text-xs font-bold uppercase tracking-wider">Required</span>
+                    </label>
+                    <div class="mt-2 group relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg class="h-5 w-5 text-zinc-500 group-focus-within:text-indigo-500" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M21 18V19C21 20.1 20.1 21 19 21H5C3.89 21 3 20.1 3 19V5C3 3.9 3.89 3 5 3H19C20.1 3 21 3.9 21 5V6H12C10.89 6 10 6.89 10 8V16C10 17.11 10.89 18 12 18H21ZM12 16H22V8H12V16ZM16 13.5C15.17 13.5 14.5 12.83 14.5 12C14.5 11.17 15.17 10.5 16 10.5C16.83 10.5 17.5 11.17 17.5 12C17.5 12.83 16.83 13.5 16 13.5Z"/>
+                            </svg>
+                        </div>
+                        <input id="solana_wallet" name="solana_wallet" type="text" required placeholder="Ex: 8y9...xYZ" class="block w-full rounded-md border-0 bg-white/5 py-2 pl-10 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6 placeholder:text-zinc-600">
+                    </div>
+                </div>
 
-      <div class="form-group">
-        <label for="portfolio">Portfolio website <span class="optional">optional</span></label>
-        <input type="url" id="portfolio" name="portfolio" placeholder="https://..." autocomplete="url">
-      </div>
+                <!-- OPTIONAL SOCIALS -->
+                <div class="space-y-4 pt-4 border-t border-zinc-800">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-zinc-400 uppercase tracking-widest">Optional socials</h3>
+                        <span class="h-px bg-zinc-800 flex-1 ml-4"></span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label for="linkedin" class="block text-xs font-medium text-zinc-500 mb-1">LinkedIn</label>
+                            <input id="linkedin" name="linkedin" type="url" placeholder="linkedin.com/in/..." class="block w-full rounded-lg border-0 bg-white/5 py-1.5 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-indigo-500 sm:text-sm px-3 placeholder:text-zinc-700">
+                        </div>
+                        <div>
+                            <label for="github" class="block text-xs font-medium text-zinc-500 mb-1">GitHub</label>
+                            <input id="github" name="github" type="url" placeholder="github.com/..." class="block w-full rounded-lg border-0 bg-white/5 py-1.5 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-indigo-500 sm:text-sm px-3 placeholder:text-zinc-700">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="portfolio" class="block text-xs font-medium text-zinc-500 mb-1">Portfolio or Website</label>
+                            <input id="portfolio" name="portfolio" type="url" placeholder="https://yourpage.com" class="block w-full rounded-lg border-0 bg-white/5 py-1.5 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-indigo-500 sm:text-sm px-3 placeholder:text-zinc-700">
+                        </div>
+                    </div>
+                </div>
 
-      <button type="submit" class="profile-submit">Submit &amp; generate skill tree</button>
-    </form>
-  </div>
+                <div class="pt-6">
+                    <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-bold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all active:scale-95">
+                        Build Verification Identity
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-  <script>
-    (function () {
-      var dropZone = document.getElementById('drop-zone');
-      var fileInput = document.getElementById('cv-file');
-      var promptEl = document.getElementById('drop-zone-prompt');
-      var acceptedEl = document.getElementById('drop-zone-accepted');
-      var filenameEl = document.getElementById('cv-filename');
-      var removeBtn = document.getElementById('cv-remove');
-      if (!dropZone || !fileInput) return;
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('cv-file');
+        const promptText = document.getElementById('prompt-text');
+        const filenameDisplay = document.getElementById('filename-display');
 
-      function updateAcceptedDisplay() {
-        var files = fileInput.files;
-        if (files && files.length) {
-          filenameEl.textContent = files[0].name;
-          if (promptEl) promptEl.classList.add('hidden');
-          if (acceptedEl) acceptedEl.classList.add('visible');
-          dropZone.classList.add('drop-zone--has-file');
-        } else {
-          if (promptEl) promptEl.classList.remove('hidden');
-          if (acceptedEl) acceptedEl.classList.remove('visible');
-          dropZone.classList.remove('drop-zone--has-file');
+        function updateFileDisplay() {
+            if (fileInput.files.length > 0) {
+                promptText.classList.add('hidden');
+                filenameDisplay.textContent = fileInput.files[0].name;
+                filenameDisplay.classList.remove('hidden');
+                dropZone.classList.add('border-indigo-500', 'bg-indigo-500/5');
+            } else {
+                promptText.classList.remove('hidden');
+                filenameDisplay.classList.add('hidden');
+                dropZone.classList.remove('border-indigo-500', 'bg-indigo-500/5');
+            }
         }
-      }
 
-      function highlight() { dropZone.classList.add('drop-zone--over'); }
-      function unhighlight() { dropZone.classList.remove('drop-zone--over'); }
-      function assignFile(file) {
-        try {
-          var dt = new DataTransfer();
-          dt.items.add(file);
-          fileInput.files = dt.files;
-          updateAcceptedDisplay();
-        } catch (err) { }
-      }
+        fileInput.addEventListener('change', updateFileDisplay);
 
-      fileInput.addEventListener('change', updateAcceptedDisplay);
-      if (removeBtn) {
-        removeBtn.addEventListener('click', function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          fileInput.value = '';
-          updateAcceptedDisplay();
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                dropZone.classList.add('drop-zone--over');
+            });
         });
-      }
-      dropZone.addEventListener('dragover', function (e) { e.preventDefault(); highlight(); });
-      dropZone.addEventListener('dragleave', unhighlight);
-      dropZone.addEventListener('drop', function (e) {
-        e.preventDefault();
-        unhighlight();
-        var files = e.dataTransfer && e.dataTransfer.files;
-        if (files && files.length) assignFile(files[0]);
-      });
-    })();
-  </script>
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                dropZone.classList.remove('drop-zone--over');
+            });
+        });
+
+        dropZone.addEventListener('drop', e => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            updateFileDisplay();
+        });
+    </script>
 </body>
 
 </html>

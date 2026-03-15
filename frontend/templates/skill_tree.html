@@ -1,185 +1,402 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Skill Tree</title>
+    <title>{{ profile.Name }}'s Skill Tree - Istanbulsfinest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600&display=swap"
+        rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #0a0a0c;
-            --text-color: #e2e8f0;
-            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: var(--font-main);
+            font-family: 'Rajdhani', sans-serif;
+            background: #020408;
             overflow: hidden;
-            /* D3 will handle scrolling/zoom */
-            display: flex;
-            flex-direction: column;
             height: 100vh;
+            width: 100vw;
+            cursor: grab;
         }
 
-        .header {
-            padding: 1.5rem 2rem;
-            background: rgba(15, 15, 20, 0.8);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 10;
+        body:active {
+            cursor: grabbing;
         }
 
-        .header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .back-btn {
-            color: #94a3b8;
-            text-decoration: none;
-            font-size: 0.875rem;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.2s;
-        }
-
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
+        /* Space background with nebula */
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
         }
 
         #tree-container {
-            flex: 1;
-            width: 100%;
-            height: 100%;
-            cursor: move;
+            position: fixed;
+            inset: 0;
+            z-index: 1;
         }
 
-        .node circle {
-            fill: #fff;
-            stroke-width: 2px;
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 28px;
+            background: linear-gradient(180deg, rgba(2, 4, 8, 0.95) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-weight: 900;
+            font-size: 15px;
+            letter-spacing: 0.15em;
+            color: #fff;
+        }
+
+        .logo span {
+            color: #00f0ff;
+            text-shadow: 0 0 20px #00f0ff;
+        }
+
+        .candidate-name {
+            font-family: 'Orbitron', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            color: rgba(255, 255, 255, 0.35);
+            text-transform: uppercase;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-ghost {
+            font-family: 'Orbitron', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            color: rgba(255, 255, 255, 0.45);
+            padding: 8px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .btn-ghost:hover {
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .btn-primary {
+            font-family: 'Orbitron', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            color: #000;
+            padding: 8px 18px;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.2s;
+            background: #00f0ff;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4), 0 0 40px rgba(0, 240, 255, 0.1);
+        }
+
+        .btn-primary:hover {
+            background: #fff;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.6), 0 0 60px rgba(0, 240, 255, 0.2);
+        }
+
+        /* D3 Node Styles */
+        .node-group {
             cursor: pointer;
-            transition: transform 0.2s;
         }
 
-        .node text {
+        .node-ring {
+            fill: none;
+            stroke-width: 1.5;
+            opacity: 0.5;
+        }
+
+        .node-circle {
+            transition: r 0.2s ease;
+        }
+
+        .node-label {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
             font-size: 12px;
-            fill: #cbd5e1;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+            fill: rgba(255, 255, 255, 0.85);
             pointer-events: none;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 1);
+        }
+
+        .node-label-center {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 13px;
+            fill: #ffffff;
+            pointer-events: none;
+            letter-spacing: 0.08em;
         }
 
         .link {
             fill: none;
+            stroke-width: 1.5;
             stroke-opacity: 0.4;
-            stroke-width: 1.5px;
+            stroke-linecap: round;
         }
 
-        .tooltip {
-            position: absolute;
-            padding: 10px;
-            background: rgba(15, 23, 42, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 13px;
-            pointer-events: none;
-            display: none;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-            z-index: 100;
-        }
-
-        .tree-bottom-buttons {
+        /* Tooltip */
+        #tooltip {
             position: fixed;
-            right: 24px;
-            bottom: 24px;
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            z-index: 20;
-        }
-
-        .tree-bottom-buttons a {
-            padding: 12px 20px;
-            font-size: 0.9375rem;
-            font-weight: 500;
+            pointer-events: none;
+            background: rgba(5, 10, 20, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
             color: #fff;
-            background: #1a1a1a;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 8px;
-            text-decoration: none;
-            transition: background 0.2s;
+            letter-spacing: 0.05em;
+            z-index: 200;
+            display: none;
+            box-shadow: 0 4px 40px rgba(0, 0, 0, 0.8);
         }
 
-        .tree-bottom-buttons a:hover {
-            background: #333;
+        /* Bottom floating actions */
+        .float-actions {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* Legend */
+        .legend {
+            position: fixed;
+            bottom: 28px;
+            left: 28px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Pulse animation for root node */
+        @keyframes pulse-ring {
+            0% {
+                r: 18;
+                opacity: 0.6;
+            }
+
+            50% {
+                r: 28;
+                opacity: 0;
+            }
+
+            100% {
+                r: 18;
+                opacity: 0;
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+
+            100% {
+                opacity: 0.3;
+            }
+        }
+
+        .pulse-anim {
+            animation: shimmer 3s ease-in-out infinite;
         }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <h1>{{ profile.Name }}'s Skill Tree</h1>
-        <a href="/login" class="back-btn">← Logout</a>
-    </div>
 
+    <!-- Nebula background canvas -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Header -->
+    <header>
+        <div style="display:flex;align-items:center;gap:20px;">
+            <div class="logo">ISTANBULS<span>FINEST</span></div>
+            <div style="width:1px;height:16px;background:rgba(255,255,255,0.08);"></div>
+            <div class="candidate-name">{{ profile.Name }} &nbsp;·&nbsp; Skill Registry</div>
+        </div>
+        <div class="header-actions">
+            <a href="/applicant/applied-jobs" class="btn-ghost">Applied Jobs</a>
+            <a href="/apply" class="btn-primary">Find Work</a>
+            <a href="/logout" class="btn-ghost">Exit</a>
+        </div>
+    </header>
+
+    <!-- Tree -->
     <div id="tree-container"></div>
-    <div class="tooltip" id="tooltip"></div>
 
-    <div class="tree-bottom-buttons">
-        <a href="/applicant/applied-jobs">Applied jobs</a>
-        <a href="/apply">Search jobs</a>
+    <!-- Tooltip -->
+    <div id="tooltip"></div>
+
+    <!-- Legend -->
+    <div class="legend" id="legend"></div>
+
+    <!-- Float actions -->
+    <div class="float-actions">
+        <div
+            style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;color:rgba(255,255,255,0.25);letter-spacing:0.1em;text-transform:uppercase;">
+            Click nodes to expand · Scroll to zoom · Drag to pan
+        </div>
     </div>
 
     <script type="application/json" id="skill-tree-profile">{{ profile | tojson }}</script>
-    <script>
-        const profileData = JSON.parse(document.getElementById('skill-tree-profile').textContent);
-        const rawData = profileData.Skills || {};
-        const candidateName = profileData.Name || 'Applicant';
 
-        // Domain colors mapping
-        const domainColors = {
-            "FrontEnd": "#22d3ee",
-            "BackEnd": "#a855f7",
-            "MachineLearning": "#f472b6",
-            "MobileApps": "#4ade80",
-            "DesktopApps": "#fbbf24",
-            "EmbeddedSystems": "#f87171",
-            "GameDevelopment": "#60a5fa",
-            "DevOps": "#818cf8",
-            "DataScience": "#fb923c",
-            "Cloud": "#38bdf8",
-            "Maths": "#c084fc",
-            "Security": "#e879f9",
-            "OtherDomain": "#94a3b8"
+    <script>
+        // ─────────────────────────────────────────
+        // NEBULA BACKGROUND
+        // ─────────────────────────────────────────
+        (function () {
+            const canvas = document.getElementById('bg-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // Deep space base
+            ctx.fillStyle = '#020408';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Nebula clouds
+            const nebulas = [
+                { x: canvas.width * 0.3, y: canvas.height * 0.3, r: 350, color: 'rgba(0, 60, 120, 0.12)' },
+                { x: canvas.width * 0.7, y: canvas.height * 0.6, r: 280, color: 'rgba(40, 0, 80, 0.1)' },
+                { x: canvas.width * 0.15, y: canvas.height * 0.7, r: 200, color: 'rgba(0, 80, 60, 0.08)' },
+                { x: canvas.width * 0.85, y: canvas.height * 0.2, r: 220, color: 'rgba(60, 20, 0, 0.09)' },
+            ];
+
+            nebulas.forEach(n => {
+                const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+                g.addColorStop(0, n.color);
+                g.addColorStop(1, 'transparent');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            });
+
+            // Stars
+            for (let i = 0; i < 300; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const r = Math.random() * 1.2;
+                const alpha = Math.random() * 0.7 + 0.1;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+                ctx.fill();
+            }
+
+            // Bright stars
+            for (let i = 0; i < 20; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const g = ctx.createRadialGradient(x, y, 0, x, y, 3);
+                g.addColorStop(0, 'rgba(255,255,255,0.9)');
+                g.addColorStop(1, 'transparent');
+                ctx.fillStyle = g;
+                ctx.fillRect(x - 3, y - 3, 6, 6);
+            }
+        })();
+
+        // ─────────────────────────────────────────
+        // DOMAIN COLORS  (neon palette)
+        // ─────────────────────────────────────────
+        const DOMAIN_COLORS = {
+            "FrontEnd": { stroke: "#00f0ff", glow: "rgba(0,240,255,0.6)", fill: "rgba(0,240,255,0.12)" },
+            "BackEnd": { stroke: "#818cf8", glow: "rgba(129,140,248,0.6)", fill: "rgba(129,140,248,0.12)" },
+            "MachineLearning": { stroke: "#f472b6", glow: "rgba(244,114,182,0.6)", fill: "rgba(244,114,182,0.12)" },
+            "MobileApps": { stroke: "#4ade80", glow: "rgba(74,222,128,0.6)", fill: "rgba(74,222,128,0.12)" },
+            "DesktopApps": { stroke: "#fbbf24", glow: "rgba(251,191,36,0.6)", fill: "rgba(251,191,36,0.12)" },
+            "EmbeddedSystems": { stroke: "#f87171", glow: "rgba(248,113,113,0.6)", fill: "rgba(248,113,113,0.12)" },
+            "GameDevelopment": { stroke: "#60a5fa", glow: "rgba(96,165,250,0.6)", fill: "rgba(96,165,250,0.12)" },
+            "DevOps": { stroke: "#a78bfa", glow: "rgba(167,139,250,0.6)", fill: "rgba(167,139,250,0.12)" },
+            "DataScience": { stroke: "#fb923c", glow: "rgba(251,146,60,0.6)", fill: "rgba(251,146,60,0.12)" },
+            "Cloud": { stroke: "#38bdf8", glow: "rgba(56,189,248,0.6)", fill: "rgba(56,189,248,0.12)" },
+            "Maths": { stroke: "#c084fc", glow: "rgba(192,132,252,0.6)", fill: "rgba(192,132,252,0.12)" },
+            "Security": { stroke: "#e879f9", glow: "rgba(232,121,249,0.6)", fill: "rgba(232,121,249,0.12)" },
+            "OtherDomain": { stroke: "#94a3b8", glow: "rgba(148,163,184,0.6)", fill: "rgba(148,163,184,0.12)" },
         };
 
-        // Convert the flat object to a D3-friendly hierarchical structure
+        function getDomainColor(node) {
+            let n = node;
+            while (n.depth > 1) n = n.parent;
+            return DOMAIN_COLORS[n.data.name] || DOMAIN_COLORS["OtherDomain"];
+        }
+
+        // ─────────────────────────────────────────
+        // DATA TRANSFORM
+        // ─────────────────────────────────────────
+        const profileData = JSON.parse(document.getElementById('skill-tree-profile').textContent);
+        const rawData = profileData.Skills || {};
+        const candidateName = profileData.Name || 'Candidate';
+
         function transformData(data) {
             const root = { name: candidateName, children: [] };
-
             for (const [domain, languages] of Object.entries(data)) {
+                if (domain === "user_id") continue;
                 const domainNode = { name: domain, children: [] };
                 for (const [language, categories] of Object.entries(languages)) {
                     const langNode = { name: language, children: [] };
                     for (const [category, skills] of Object.entries(categories)) {
-                        const catNode = {
-                            name: category,
-                            children: skills.map(s => ({ name: s }))
-                        };
+                        const catNode = { name: category, children: skills.map(s => ({ name: s })) };
                         langNode.children.push(catNode);
                     }
                     domainNode.children.push(langNode);
@@ -189,123 +406,265 @@
             return root;
         }
 
-        const dataNode = transformData(rawData);
+        // ─────────────────────────────────────────
+        // BUILD LEGEND
+        // ─────────────────────────────────────────
+        const domains = Object.keys(rawData).filter(d => d !== 'user_id');
+        const legend = document.getElementById('legend');
+        domains.forEach(d => {
+            const c = DOMAIN_COLORS[d] || DOMAIN_COLORS["OtherDomain"];
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+            item.innerHTML = `<div class="legend-dot" style="background:${c.stroke};box-shadow:0 0 6px ${c.stroke};"></div>${d}`;
+            legend.appendChild(item);
+        });
 
-        // SVG Setup
-        const width = window.innerWidth;
-        const height = window.innerHeight - 80;
-        const radius = Math.min(width, height) / 2 * 0.8;
+        // ─────────────────────────────────────────
+        // D3 TREE
+        // ─────────────────────────────────────────
+        const W = window.innerWidth;
+        const H = window.innerHeight;
+        const radius = Math.min(W, H) / 2 * 0.82;
 
-        const svg = d3.select("#tree-container").append("svg")
-            .attr("width", width)
-            .attr("height", height)
-            .call(d3.zoom().on("zoom", (event) => {
-                g.attr("transform", event.transform);
-            }))
-            .append("g");
+        const svg = d3.select("#tree-container")
+            .append("svg")
+            .attr("width", W)
+            .attr("height", H);
 
-        const g = svg.append("g")
-            .attr("transform", `translate(${width / 2},${height / 2})`);
+        // Defs for glow filters
+        const defs = svg.append("defs");
+
+        // Root glow filter
+        const rootFilter = defs.append("filter").attr("id", "glow-root").attr("x", "-50%").attr("y", "-50%").attr("width", "200%").attr("height", "200%");
+        rootFilter.append("feGaussianBlur").attr("stdDeviation", "6").attr("result", "blur");
+        const rootMerge = rootFilter.append("feMerge");
+        rootMerge.append("feMergeNode").attr("in", "blur");
+        rootMerge.append("feMergeNode").attr("in", "SourceGraphic");
+
+        // Domain glow filters
+        Object.entries(DOMAIN_COLORS).forEach(([name, c]) => {
+            const id = `glow-${name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+            const f = defs.append("filter").attr("id", id).attr("x", "-80%").attr("y", "-80%").attr("width", "260%").attr("height", "260%");
+            f.append("feGaussianBlur").attr("stdDeviation", "4").attr("result", "blur");
+            const fm = f.append("feMerge");
+            fm.append("feMergeNode").attr("in", "blur");
+            fm.append("feMergeNode").attr("in", "blur");
+            fm.append("feMergeNode").attr("in", "SourceGraphic");
+        });
+
+        const zoomG = svg.append("g");
+
+        svg.call(
+            d3.zoom()
+                .scaleExtent([0.25, 4])
+                .on("zoom", e => zoomG.attr("transform", e.transform))
+        );
+
+        const g = zoomG.append("g")
+            .attr("transform", `translate(${W / 2},${H / 2})`);
 
         const tree = d3.tree()
             .size([2 * Math.PI, radius])
-            .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
+            .separation((a, b) => (a.parent === b.parent ? 1 : 2.2) / a.depth);
 
-        let root = d3.hierarchy(dataNode);
+        let root = d3.hierarchy(transformData(rawData));
 
-        // Collapse all nodes except root and first level initially
-        root.descendants().forEach((d, i) => {
+        // Assign stable IDs
+        let nodeId = 0;
+        root.each(d => d.id = ++nodeId);
+
+        // Collapse beyond depth 1 by default
+        root.descendants().forEach(d => {
             d._children = d.children;
             if (d.depth > 1) d.children = null;
         });
 
-        const diagonal = d3.linkRadial()
-            .angle(d => d.x)
-            .radius(d => d.y);
+        const linkG = g.append("g").attr("class", "links");
+        const nodeG = g.append("g").attr("class", "nodes");
+
+        const tooltip = document.getElementById("tooltip");
+
+        function nodeRadius(d) {
+            if (d.depth === 0) return 22;
+            if (d.depth === 1) return 14;
+            if (d.depth === 2) return 9;
+            return 6;
+        }
+
+        function getFilterId(d) {
+            if (d.depth === 0) return "url(#glow-root)";
+            let n = d; while (n.depth > 1) n = n.parent;
+            return `url(#glow-${n.data.name.toLowerCase().replace(/[^a-z0-9]/g, '')})`;
+        }
 
         function update(source) {
-            const nodes = root.descendants().reverse();
+            tree(root);
+            const nodes = root.descendants();
             const links = root.links();
 
-            tree(root);
+            const diagonal = d3.linkRadial()
+                .angle(d => d.x)
+                .radius(d => d.y);
 
-            // Links
-            const link = g.selectAll(".link")
-                .data(links, d => d.target.id || (d.target.id = Math.random().toString()));
+            // ── LINKS ──
+            const link = linkG.selectAll("path.link")
+                .data(links, d => d.target.id);
 
             const linkEnter = link.enter().append("path")
                 .attr("class", "link")
-                .attr("d", d3.linkRadial()
-                    .angle(source.x)
-                    .radius(source.y))
-                .attr("stroke", d => {
-                    let parent = d.target;
-                    while (parent.depth > 1) parent = parent.parent;
-                    return domainColors[parent.data.name] || "#444";
+                .attr("d", () => {
+                    const o = { x: source.x0 ?? source.x, y: source.y0 ?? source.y };
+                    return d3.linkRadial().angle(d => d.x).radius(d => d.y)({ source: o, target: o });
+                })
+                .attr("stroke", d => getDomainColor(d.target).stroke)
+                .style("filter", d => {
+                    const c = getDomainColor(d.target);
+                    return `drop-shadow(0 0 3px ${c.stroke})`;
                 });
 
-            link.merge(linkEnter).transition().duration(500)
-                .attr("d", diagonal);
+            link.merge(linkEnter)
+                .transition().duration(500).ease(d3.easeCubicOut)
+                .attr("d", diagonal)
+                .attr("stroke", d => getDomainColor(d.target).stroke)
+                .attr("stroke-opacity", d => d.target.depth === 1 ? 0.55 : d.target.depth === 2 ? 0.4 : 0.3);
 
-            link.exit().transition().duration(500)
-                .attr("d", d3.linkRadial()
-                    .angle(source.x)
-                    .radius(source.y))
+            link.exit()
+                .transition().duration(400).ease(d3.easeCubicIn)
+                .attr("d", () => {
+                    const o = { x: source.x, y: source.y };
+                    return d3.linkRadial().angle(d => d.x).radius(d => d.y)({ source: o, target: o });
+                })
                 .remove();
 
-            // Nodes
-            const node = g.selectAll(".node")
-                .data(nodes, d => d.id || (d.id = Math.random().toString()));
+            // ── NODES ──
+            const node = nodeG.selectAll("g.node-group")
+                .data(nodes, d => d.id);
 
             const nodeEnter = node.enter().append("g")
-                .attr("class", "node")
-                .attr("transform", d => `rotate(${source.x * 180 / Math.PI - 90}) translate(${source.y},0)`)
+                .attr("class", "node-group")
+                .attr("transform", () => {
+                    const angle = (source.x0 ?? source.x) - Math.PI / 2;
+                    const r = source.y0 ?? source.y;
+                    return `translate(${Math.cos(angle) * r},${Math.sin(angle) * r})`;
+                })
+                .style("opacity", 0)
                 .on("click", (event, d) => {
+                    event.stopPropagation();
                     if (d.children) {
                         d._children = d.children;
                         d.children = null;
-                    } else {
+                    } else if (d._children) {
                         d.children = d._children;
                         d._children = null;
                     }
+                    d.x0 = d.x; d.y0 = d.y;
                     update(d);
-                });
-
-            nodeEnter.append("circle")
-                .attr("r", d => d.depth === 0 ? 8 : (d.depth === 1 ? 6 : 4))
-                .attr("fill", d => {
-                    if (d.depth === 0) return "#fff";
-                    let parent = d;
-                    while (parent.depth > 1) parent = parent.parent;
-                    return domainColors[parent.data.name] || "#94a3b8";
                 })
-                .style("filter", "drop-shadow(0 0 5px currentColor)");
+                .on("mouseover", (event, d) => {
+                    if (d.depth === 0) return;
+                    tooltip.style.display = "block";
+                    const c = getDomainColor(d);
+                    tooltip.style.borderColor = c.stroke;
+                    tooltip.style.boxShadow = `0 0 20px ${c.glow}`;
+                    tooltip.innerHTML = `<span style="color:${c.stroke}">${d.data.name}</span>`;
+                })
+                .on("mousemove", event => {
+                    tooltip.style.left = (event.clientX + 14) + "px";
+                    tooltip.style.top = (event.clientY - 10) + "px";
+                })
+                .on("mouseout", () => { tooltip.style.display = "none"; });
 
+            // Outer ring (decoration)
+            nodeEnter.append("circle")
+                .attr("class", "node-ring")
+                .attr("r", d => nodeRadius(d) + 5)
+                .attr("stroke", d => d.depth === 0 ? "#ffffff" : getDomainColor(d).stroke)
+                .attr("fill", "none")
+                .attr("stroke-dasharray", d => d.depth === 0 ? "none" : "3 4")
+                .style("opacity", d => d.depth <= 1 ? 0.3 : 0);
+
+            // Glow fill circle
+            nodeEnter.append("circle")
+                .attr("class", "node-glow")
+                .attr("r", d => nodeRadius(d) * 2.2)
+                .attr("fill", d => d.depth === 0 ? "rgba(255,255,255,0.03)" : getDomainColor(d).fill)
+                .attr("stroke", "none");
+
+            // Main circle
+            nodeEnter.append("circle")
+                .attr("class", "node-circle")
+                .attr("r", nodeRadius)
+                .attr("fill", d => {
+                    if (d.depth === 0) return "#ffffff";
+                    const c = getDomainColor(d);
+                    return d.depth === 1 ? c.fill : "rgba(5,10,20,0.8)";
+                })
+                .attr("stroke", d => d.depth === 0 ? "#ffffff" : getDomainColor(d).stroke)
+                .attr("stroke-width", d => d.depth <= 1 ? 2 : 1.5)
+                .style("filter", getFilterId);
+
+            // Inner dot for leaf nodes
+            nodeEnter.filter(d => d.depth >= 2).append("circle")
+                .attr("r", d => d.depth === 2 ? 3 : 2)
+                .attr("fill", d => getDomainColor(d).stroke)
+                .style("filter", getFilterId);
+
+            // Labels
             nodeEnter.append("text")
-                .attr("dy", "0.31em")
-                .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
-                .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
-                .attr("transform", d => d.x >= Math.PI ? "rotate(180)" : null)
+                .attr("class", d => d.depth === 0 ? "node-label-center" : "node-label")
+                .attr("dy", "0.32em")
+                .attr("x", d => {
+                    if (d.depth === 0) return 0;
+                    return d.x < Math.PI ? nodeRadius(d) + 8 : -(nodeRadius(d) + 8);
+                })
+                .attr("text-anchor", d => {
+                    if (d.depth === 0) return "middle";
+                    return d.x < Math.PI ? "start" : "end";
+                })
                 .text(d => d.data.name)
-                .clone(true).lower()
-                .attr("stroke", "white");
+                .style("fill", d => d.depth === 0 ? "#000" : (d.depth === 1 ? getDomainColor(d).stroke : "rgba(255,255,255,0.75)"))
+                .style("font-size", d => d.depth === 0 ? "11px" : d.depth === 1 ? "12px" : "10px")
+                .style("font-weight", d => d.depth <= 1 ? "700" : "500");
 
-            const nodeUpdate = node.merge(nodeEnter).transition().duration(500)
-                .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`);
+            // Expand/collapse indicator
+            nodeEnter.filter(d => d.depth > 0 && d._children).append("text")
+                .attr("dy", "0.32em")
+                .attr("x", d => d.x < Math.PI ? nodeRadius(d) - 3 : -(nodeRadius(d) - 3))
+                .attr("text-anchor", "middle")
+                .style("font-size", "8px")
+                .style("fill", d => getDomainColor(d).stroke)
+                .style("pointer-events", "none")
+                .text("+");
 
-            node.exit().transition().duration(500)
-                .attr("transform", d => `rotate(${source.x * 180 / Math.PI - 90}) translate(${source.y},0)`)
+            // Merge & transition
+            const nodeUpdate = node.merge(nodeEnter);
+
+            nodeUpdate.transition().duration(500).ease(d3.easeCubicOut)
+                .attr("transform", d => {
+                    const angle = d.x - Math.PI / 2;
+                    return `translate(${Math.cos(angle) * d.y},${Math.sin(angle) * d.y})`;
+                })
+                .style("opacity", 1);
+
+            node.exit()
+                .transition().duration(400).ease(d3.easeCubicIn)
+                .attr("transform", () => {
+                    const angle = source.x - Math.PI / 2;
+                    return `translate(${Math.cos(angle) * source.y},${Math.sin(angle) * source.y})`;
+                })
+                .style("opacity", 0)
                 .remove();
+
+            // Store positions for next transition
+            root.each(d => { d.x0 = d.x; d.y0 = d.y; });
         }
 
+        root.x0 = 0; root.y0 = 0;
         update(root);
 
         window.addEventListener('resize', () => {
-            const width = window.innerWidth;
-            const height = window.innerHeight - 80;
-            d3.select("svg").attr("width", width).attr("height", height);
+            svg.attr("width", window.innerWidth).attr("height", window.innerHeight);
         });
-
     </script>
 </body>
 

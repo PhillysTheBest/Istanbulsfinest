@@ -413,24 +413,29 @@ async def applicant_profile_post(
         # 1. Generate SHA-256 Hash for the Skill Tree
         skill_hash = generate_skill_hash(extracted_skills)
         
-        # 2. Anchor to Solana Blockchain 
-        # (Assuming the candidate's wallet is provided in the form or extracted)
-        # Requirement: "candidate_wallet: the candidate's Solana public key (string)"
-        candidate_wallet = solana_wallet if solana_wallet else github
-        
         try:
-            print(f"Anchoring Skill Tree to Solana for wallet: {candidate_wallet}")
-            registry = SkillRegistryClient()
-            tx_sig = registry.issue_skill_passport(candidate_wallet, skill_hash)
+            # 2. Anchor to Solana Blockchain 
+            # Only attempt if we have something that looks like a Solana address
+            candidate_wallet = solana_wallet.strip() if solana_wallet else ""
             
-            if tx_sig:
-                blockchain_status = "CONFIRMED"
-                solana_tx_sig = tx_sig
+            if candidate_wallet and len(candidate_wallet) >= 32:
+                print(f"DEBUG: Anchoring Skill Tree for wallet: {candidate_wallet}")
+                registry = SkillRegistryClient()
+                tx_sig = registry.issue_skill_passport(candidate_wallet, skill_hash)
+                
+                if tx_sig:
+                    blockchain_status = "CONFIRMED"
+                    solana_tx_sig = tx_sig
+                else:
+                    print("DEBUG: Anchoring failed (returned None)")
+                    blockchain_status = "PENDING"
+                    solana_tx_sig = None
             else:
+                print(f"DEBUG: Skipping anchoring. Invalid or missing wallet: '{candidate_wallet}'")
                 blockchain_status = "PENDING"
                 solana_tx_sig = None
         except Exception as e:
-            print(f"Solana Anchoring Error: {e}")
+            print(f"DEBUG: Solana Anchoring Exception: {e}")
             blockchain_status = "PENDING"
             solana_tx_sig = None
 
@@ -450,8 +455,13 @@ async def applicant_profile_post(
         # --- WEB3 END ---
         
         pprint.pprint(extracted_skills)
+    except Exception as e:
+        print(f"CV Processing Error: {e}")
+        # Redirect back with an error message in the query params
+        return RedirectResponse(url="/applicant/upload?error=1", status_code=303)
     finally:
-        os.unlink(tmp_path)
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
     return RedirectResponse(url="/applicant/tree", status_code=303)
 
 

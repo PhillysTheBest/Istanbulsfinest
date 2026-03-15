@@ -1,4 +1,4 @@
-# Web framework
+# Web Framework
 fastapi>=0.104.0
 uvicorn>=0.24.0
 jinja2>=3.1.0
@@ -8,25 +8,23 @@ python-dotenv
 # Database
 pymongo
 
-# CV Scraper Dependencies
+# CV Scraper & AI
 google-genai
 PyPDF2
 requests
 beautifulsoup4
 
-# Blockchain Dependencies
+# Blockchain (Solana)
 solana
 solders
 
-# Testing/Utilities
-fpdf
-
-# Session Middleware
+# Session Management
 starlette-sessions
 itsdangerous
+
+# Audio/TTS
 elevenlabs
 
-# Solana Integration
-solana
-solders
-
+# Utilities
+fpdf
+certifi
