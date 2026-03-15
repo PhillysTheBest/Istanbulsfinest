@@ -54,6 +54,12 @@ def get_skills_db():
 def get_skills_profile_collection():
     """
     Helper to get the specific 'SkillsProfile' collection directly.
+    
+    Fields for Solana Integration:
+    - candidate_wallet: str (Solana public key)
+    - skill_hash: str (SHA-256 hash of the skill tree)
+    - solana_tx_signature: str (Transaction signature from Anchor)
+    - blockchain_status: str ("PENDING", "CONFIRMED", or "FAILED")
     """
     return get_skills_db()["SkillsProfile"]
 
