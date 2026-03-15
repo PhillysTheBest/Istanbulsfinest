@@ -4,31 +4,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Recruiter</title>
+  <title>Dashboard – CV Skill Tree</title>
   <link rel="stylesheet" href="/static/index.css">
-  <link rel="stylesheet" href="/static/login.css">
+  <link rel="stylesheet" href="/static/applicant-style-pages.css">
   <link rel="stylesheet" href="/static/recruiter.css">
 </head>
 
-<body>
-  <h1>Recruiter</h1>
-
-  {% if job_added %}
-  <div class="message success" role="alert">Job added successfully.</div>
-  {% endif %}
-  {% if job_error %}
-  <div class="message error" role="alert">Could not add job. Please try again.</div>
-  {% endif %}
-
-  <p>
+<body class="applicant-style-page recruiter-dashboard">
+  <header class="recruiter-header">
+    <h1 class="recruiter-name">{{ recruiter_name }}</h1>
     <button type="button" class="recruiter-add-job-btn" id="open-add-job" aria-haspopup="dialog" aria-expanded="false">Add job</button>
-  </p>
+  </header>
 
-  <div id="add-job-modal" class="recruiter-modal" role="dialog" aria-labelledby="add-job-title" aria-modal="true" hidden>
+  <main class="main-content">
+    {% if job_added %}
+    <div class="page-message page-message-success" role="alert">Job added successfully.</div>
+    {% endif %}
+    {% if job_error %}
+    <div class="page-message page-message-error" role="alert">Could not add job. Please try again.</div>
+    {% endif %}
+
+    <div class="recruiter-job-grid" id="recruiter-job-grid">
+      {% for job in jobs %}
+      <div class="job-square recruiter-job-card" data-job-id="{{ job.id }}" data-job-title="{{ job.title|e }}">
+        <div class="job-square-title">{{ job.title }}</div>
+        <div class="job-square-preview">{{ job.preview }}</div>
+        <div class="job-square-meta">Posted {{ job.created_at[:10] if job.created_at else '' }}</div>
+        <button type="button" class="recruiter-view-candidates-btn" data-job-id="{{ job.id }}" data-job-title="{{ job.title|e }}">View candidates</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% if not jobs %}
+    <p class="recruiter-empty">No jobs yet. Add your first job to start receiving applications.</p>
+    {% endif %}
+  </main>
+
+  <a href="/logout" class="back-btn" aria-label="Sign out">← Sign out</a>
+
+  <!-- Add job modal -->
+  <div id="add-job-modal" class="recruiter-modal-overlay" role="dialog" aria-labelledby="add-job-title" aria-modal="true" hidden>
     <div class="recruiter-modal-backdrop" id="add-job-backdrop"></div>
-    <div class="recruiter-modal-card auth-card">
+    <div class="recruiter-modal-box recruiter-add-job-modal">
+      <button type="button" class="recruiter-modal-close" id="close-add-job" aria-label="Close">×</button>
       <h2 id="add-job-title" class="recruiter-modal-title">Add job</h2>
-      <form action="/recruiter/jobs" method="post">
+      <form action="/recruiter/jobs" method="post" class="recruiter-form">
         <label for="job-title">Job name</label>
         <input type="text" id="job-title" name="title" required autocomplete="off">
 
@@ -40,32 +59,202 @@
 
         <div class="recruiter-modal-actions">
           <button type="submit">Add job</button>
-          <button type="button" class="recruiter-modal-cancel" id="close-add-job">Cancel</button>
+          <button type="button" class="recruiter-modal-cancel" id="close-add-job-2">Cancel</button>
         </div>
       </form>
     </div>
   </div>
 
+  <!-- Candidates modal (scrollable list) -->
+  <div id="candidates-modal" class="recruiter-modal-overlay recruiter-candidates-modal-wrap" role="dialog" aria-labelledby="candidates-modal-title" aria-modal="true" hidden>
+    <div class="recruiter-modal-backdrop" id="candidates-backdrop"></div>
+    <div class="recruiter-candidates-modal-box">
+      <button type="button" class="recruiter-modal-close" id="close-candidates" aria-label="Close">×</button>
+      <h2 id="candidates-modal-title" class="recruiter-modal-title">Candidates</h2>
+      <div id="candidates-loading" class="recruiter-candidates-loading" hidden>Loading…</div>
+      <div id="candidates-list" class="recruiter-candidates-list"></div>
+      <div id="candidates-empty" class="recruiter-candidates-empty" hidden>No applications for this job yet.</div>
+      <div id="candidates-modal-actions" class="recruiter-candidates-modal-actions" hidden>
+        <button type="button" id="rank-candidates-btn" class="recruiter-rank-candidates-btn">Rank candidates</button>
+      </div>
+      <div id="candidates-ranking-loading" class="recruiter-candidates-loading" hidden>Ranking candidates…</div>
+    </div>
+  </div>
+
   <script>
     (function () {
-      var openBtn = document.getElementById('open-add-job');
-      var closeBtn = document.getElementById('close-add-job');
-      var backdrop = document.getElementById('add-job-backdrop');
-      var modal = document.getElementById('add-job-modal');
-      if (!openBtn || !modal) return;
+      var openAddBtn = document.getElementById('open-add-job');
+      var closeAddBtn = document.getElementById('close-add-job');
+      var closeAddBtn2 = document.getElementById('close-add-job-2');
+      var addBackdrop = document.getElementById('add-job-backdrop');
+      var addModal = document.getElementById('add-job-modal');
 
-      function openModal() {
-        modal.removeAttribute('hidden');
-        openBtn.setAttribute('aria-expanded', 'true');
+      function openAddModal() {
+        if (addModal) { addModal.removeAttribute('hidden'); if (openAddBtn) openAddBtn.setAttribute('aria-expanded', 'true'); }
       }
-      function closeModal() {
-        modal.setAttribute('hidden', '');
-        openBtn.setAttribute('aria-expanded', 'false');
+      function closeAddModal() {
+        if (addModal) { addModal.setAttribute('hidden', ''); if (openAddBtn) openAddBtn.setAttribute('aria-expanded', 'false'); }
       }
 
-      openBtn.addEventListener('click', openModal);
-      closeBtn.addEventListener('click', closeModal);
-      if (backdrop) backdrop.addEventListener('click', closeModal);
+      if (openAddBtn) openAddBtn.addEventListener('click', openAddModal);
+      if (closeAddBtn) closeAddBtn.addEventListener('click', closeAddModal);
+      if (closeAddBtn2) closeAddBtn2.addEventListener('click', closeAddModal);
+      if (addBackdrop) addBackdrop.addEventListener('click', closeAddModal);
+
+      // Candidates modal
+      var candModal = document.getElementById('candidates-modal');
+      var candTitle = document.getElementById('candidates-modal-title');
+      var candLoading = document.getElementById('candidates-loading');
+      var candList = document.getElementById('candidates-list');
+      var candEmpty = document.getElementById('candidates-empty');
+      var closeCand = document.getElementById('close-candidates');
+      var candBackdrop = document.getElementById('candidates-backdrop');
+
+      function flattenSkills(skills) {
+        if (!skills || typeof skills !== 'object') return [];
+        var list = [];
+        function walk(obj, prefix) {
+          if (Array.isArray(obj)) { list.push(prefix + ': ' + obj.join(', ')); return; }
+          if (obj && typeof obj === 'object') {
+            Object.keys(obj).forEach(function (k) {
+              walk(obj[k], prefix ? prefix + ' → ' + k : k);
+            });
+          }
+        }
+        walk(skills, '');
+        return list;
+      }
+
+      function renderCandidate(app, rank) {
+        var snap = app.applicant_snapshot || {};
+        var profile = snap.profile_data || {};
+        var name = profile.Name || 'Applicant';
+        var skillsObj = profile.Skills || {};
+        var skillsList = flattenSkills(skillsObj);
+        var github = (snap.github_url || '').trim();
+        var status = app.status || '';
+        var applied = app.applied_at ? new Date(app.applied_at).toLocaleDateString() : '';
+        var userId = app.user_id || '';
+
+        var el = document.createElement('div');
+        el.className = 'recruiter-candidate-card' + (rank != null ? ' recruiter-candidate-card-ranked' : '');
+        var html = '';
+        if (rank != null) html += '<span class="recruiter-candidate-rank" aria-label="Rank ' + rank + '">#' + rank + '</span>';
+        html += '<div class="recruiter-candidate-header"><strong class="recruiter-candidate-name">' + escapeHtml(name) + '</strong>';
+        if (status) html += '<span class="recruiter-candidate-status">' + escapeHtml(status) + '</span>';
+        html += '</div>';
+        if (userId) html += '<p class="recruiter-candidate-userid">User ID: <code>' + escapeHtml(userId) + '</code></p>';
+        if (applied) html += '<p class="recruiter-candidate-meta">Applied ' + escapeHtml(applied) + '</p>';
+        if (github) html += '<p class="recruiter-candidate-github"><a href="' + escapeHtml(github) + '" target="_blank" rel="noopener">GitHub</a></p>';
+        if (skillsList.length) {
+          html += '<div class="recruiter-candidate-skills"><strong>Skills</strong><ul>';
+          skillsList.forEach(function (s) { html += '<li>' + escapeHtml(s) + '</li>'; });
+          html += '</ul></div>';
+        } else {
+          html += '<p class="recruiter-candidate-skills-none">No skills data</p>';
+        }
+        el.innerHTML = html;
+        return el;
+      }
+
+      function escapeHtml(s) {
+        var div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+      }
+
+      var currentCandidatesJobId = null;
+      var currentCandidatesApps = [];
+
+      function openCandidatesModal(jobId, jobTitle) {
+        currentCandidatesJobId = jobId;
+        currentCandidatesApps = [];
+        candTitle.textContent = 'Candidates for "' + jobTitle + '"';
+        candList.innerHTML = '';
+        candEmpty.setAttribute('hidden', '');
+        var modalActions = document.getElementById('candidates-modal-actions');
+        var rankLoading = document.getElementById('candidates-ranking-loading');
+        var rankBtn = document.getElementById('rank-candidates-btn');
+        if (modalActions) modalActions.setAttribute('hidden', '');
+        if (rankLoading) rankLoading.setAttribute('hidden', '');
+        if (rankBtn) rankBtn.disabled = false;
+        if (candLoading) candLoading.removeAttribute('hidden');
+        if (candModal) candModal.removeAttribute('hidden');
+
+        fetch('/api/jobs/' + encodeURIComponent(jobId) + '/applications')
+          .then(function (r) { if (!r.ok) throw new Error('Failed to load'); return r.json(); })
+          .then(function (data) {
+            if (candLoading) candLoading.setAttribute('hidden', '');
+            var apps = data.applications || [];
+            currentCandidatesApps = apps;
+            if (apps.length === 0) {
+              if (candEmpty) candEmpty.removeAttribute('hidden');
+            } else {
+              if (modalActions) modalActions.removeAttribute('hidden');
+              apps.forEach(function (app) { candList.appendChild(renderCandidate(app)); });
+            }
+          })
+          .catch(function () {
+            if (candLoading) candLoading.setAttribute('hidden', '');
+            candList.innerHTML = '<p class="recruiter-candidates-error">Could not load candidates.</p>';
+          });
+      }
+
+      function renderRankedCandidates(rankedApps) {
+        candList.innerHTML = '';
+        if (candEmpty) candEmpty.setAttribute('hidden', '');
+        var heading = document.createElement('p');
+        heading.className = 'recruiter-ranked-heading';
+        heading.textContent = 'Ranked by eligibility (best match first)';
+        candList.appendChild(heading);
+        rankedApps.forEach(function (app, i) {
+          candList.appendChild(renderCandidate(app, i + 1));
+        });
+      }
+
+      function onRankCandidatesClick() {
+        if (!currentCandidatesJobId || currentCandidatesApps.length === 0) return;
+        var rankBtn = document.getElementById('rank-candidates-btn');
+        var rankLoading = document.getElementById('candidates-ranking-loading');
+        if (rankBtn) rankBtn.disabled = true;
+        if (rankLoading) rankLoading.removeAttribute('hidden');
+
+        fetch('/api/jobs/' + encodeURIComponent(currentCandidatesJobId) + '/rank-applications', { method: 'POST', credentials: 'same-origin' })
+          .then(function (r) {
+            if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || 'Ranking failed'); });
+            return r.json();
+          })
+          .then(function (data) {
+            if (rankLoading) rankLoading.setAttribute('hidden', '');
+            if (rankBtn) rankBtn.disabled = false;
+            var ranked = data.ranked_applications || [];
+            if (ranked.length) {
+              currentCandidatesApps = ranked;
+              renderRankedCandidates(ranked);
+            }
+          })
+          .catch(function (err) {
+            if (rankLoading) rankLoading.setAttribute('hidden', '');
+            if (rankBtn) rankBtn.disabled = false;
+            candList.innerHTML = '<p class="recruiter-candidates-error">' + escapeHtml(err.message || 'Could not rank candidates.') + '</p>';
+          });
+      }
+
+      function closeCandidatesModal() {
+        if (candModal) candModal.setAttribute('hidden', '');
+      }
+
+      document.querySelectorAll('.recruiter-view-candidates-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var jobId = btn.getAttribute('data-job-id');
+          var jobTitle = btn.getAttribute('data-job-title') || 'Job';
+          if (jobId) openCandidatesModal(jobId, jobTitle);
+        });
+      });
+      if (closeCand) closeCand.addEventListener('click', closeCandidatesModal);
+      if (candBackdrop) candBackdrop.addEventListener('click', closeCandidatesModal);
+      var rankCandidatesBtn = document.getElementById('rank-candidates-btn');
+      if (rankCandidatesBtn) rankCandidatesBtn.addEventListener('click', onRankCandidatesClick);
     })();
   </script>
 </body>

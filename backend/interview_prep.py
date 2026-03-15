@@ -53,12 +53,12 @@ Skills:
 
 TASK:
 Write a spoken self-presentation script for {applicant_name} that:
-1. Lasts roughly 45–75 seconds when read aloud at a natural pace (about 120–180 words).
+1. Lasts roughly 45-75 seconds when read aloud at a natural pace (about 120-180 words).
 2. Opens with a warm, confident greeting ("Hi, I'm …" or similar).
-3. Highlights the 2–4 most relevant skills or experiences that match the job requirements, weaving them naturally into the flow.
+3. Highlights the 2-4 most relevant skills or experiences that match the job requirements, weaving them naturally into the flow.
 4. Reflects the tone and mindset the employer is looking for (e.g. entrepreneurial, collaborative, detail-oriented) based on the job description.
 5. Sounds genuinely human — varied sentence length, natural rhythm, not a list of bullet points read aloud. Avoid clichés like "I am passionate about…" or "I am a team player."
-6. Ends with a confident, forward-looking statement showing enthusiasm for the role.
+6. Ends with a confident, forward-looking statement showing enthusiasm for the role, that is not cringy or cheesy.
 
 Return ONLY the spoken script text, ready to be read aloud. No headings, no notes, no markdown formatting.
 """
@@ -114,3 +114,66 @@ def generate_audio_base64(script: str) -> str:
         raise RuntimeError(f"ElevenLabs API error {response.status_code}: {msg}")
 
     return base64.b64encode(response.content).decode("utf-8")
+
+
+# This function is not related to interview prep, but it also uses gemini API so just placed here.
+def rank_applicants_by_eligibility(
+    job_title: str,
+    job_preview: str,
+    job_qualifications: str,
+    candidates: list[dict],
+) -> list[int]:
+    """
+    Use Gemini to rank candidates by eligibility for the job.
+    candidates: list of {"index": int, "name": str, "skills": str} (one per applicant).
+    Returns list of indices in order of eligibility (best first), e.g. [2, 0, 1].
+    """
+    if not candidates:
+        return []
+    if len(candidates) == 1:
+        return [candidates[0]["index"]]
+
+    candidates_blob = ""
+    for c in candidates:
+        candidates_blob += f"\n--- Candidate index {c['index']} ---\nName: {c.get('name', 'N/A')}\nSkills:\n{c.get('skills', 'None')}\n"
+
+    prompt = f"""You are an expert recruiter. Your job is to rank the following candidates by how well they match the job (most eligible first).
+
+JOB:
+Title: {job_title}
+Description/Preview: {job_preview}
+Qualifications/Requirements: {job_qualifications}
+
+CANDIDATES (each has an index number):
+{candidates_blob}
+
+TASK: Return a JSON object with a single key "order" whose value is a list of the CANDIDATE INDICES in order of eligibility (best match first, worst last). Use only the index numbers that appear in "Candidate index X" above.
+Example: if there are 3 candidates (indices 0, 1, 2) and candidate 2 is best, then 0, then 1, return: {{"order": [2, 0, 1]}}
+
+Return ONLY valid JSON, no other text."""
+
+    config = types.GenerateContentConfig(
+        temperature=0.2,
+        response_mime_type="application/json",
+    )
+    response = _gemini_client.models.generate_content(
+        model=MODEL_ID,
+        contents=prompt,
+        config=config,
+    )
+    text = (response.text or "").strip()
+    try:
+        data = json.loads(text)
+        order = data.get("order")
+        if not isinstance(order, list):
+            return [c["index"] for c in candidates]
+        # Validate: every index in order should be in our candidate indices
+        valid_indices = {c["index"] for c in candidates}
+        ranked = [int(i) for i in order if i in valid_indices]
+        # Append any missing indices at the end
+        for c in candidates:
+            if c["index"] not in ranked:
+                ranked.append(c["index"])
+        return ranked
+    except (json.JSONDecodeError, ValueError, TypeError):
+        return [c["index"] for c in candidates]

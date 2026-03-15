@@ -28,7 +28,7 @@ PROJECT_ROOT = os.path.dirname(BASE_DIR)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 from CVScraperJSON import extract_github_url, extract_skills_tree, extract_text_from_pdf, scrape_github_profile
-from backend.interview_prep import generate_interview_script, generate_audio_base64
+from backend.interview_prep import generate_interview_script, generate_audio_base64, rank_applicants_by_eligibility
 
 app = FastAPI(title="CV Skill Tree", description="Skill Tree for CVs")
 static_dir = os.path.join(BASE_DIR, "../frontend/static")
@@ -47,11 +47,52 @@ app.add_middleware(
 )
 
 
+def _index_key_names(info):
+    """Return list of field names in an index key (handles list of tuples or dict)."""
+    key = info.get("key")
+    if key is None:
+        return []
+    if isinstance(key, dict):
+        return list(key.keys())
+    return [item[0] for item in list(key)]
+
+
 @app.on_event("startup")
 async def create_indexes():
-    """Ensure required indexes exist on startup."""
+    """Ensure required indexes exist on startup. Drop any unique index on job_id only (would block multiple users applying to same job)."""
     try:
         apps = get_applications_collection()
+        indexes = apps.index_information()
+        for name, info in list(indexes.items()):
+            key_names = sorted(_index_key_names(info))
+            is_unique = info.get("unique", False)
+            print(f"[startup] Applications index: {name!r} key={key_names} unique={is_unique}")
+            if name == "_id_":
+                continue
+            if is_unique and key_names == ["job_id"]:
+                try:
+                    apps.drop_index(name)
+                    print(f"[startup] Dropped unique index on job_id only: {name!r}")
+                except Exception as drop_err:
+                    print(f"[startup] Failed to drop index {name!r}: {drop_err}")
+            elif is_unique and len(key_names) == 1 and "job_id" in key_names:
+                try:
+                    apps.drop_index(name)
+                    print(f"[startup] Dropped unique single-field job_id index: {name!r}")
+                except Exception as drop_err:
+                    print(f"[startup] Failed to drop index {name!r}: {drop_err}")
+            elif is_unique and name == "job_id_1":
+                try:
+                    apps.drop_index(name)
+                    print(f"[startup] Dropped unique index by name: {name!r}")
+                except Exception as drop_err:
+                    print(f"[startup] Failed to drop index {name!r}: {drop_err}")
+            elif is_unique and "applicant_id" in key_names:
+                try:
+                    apps.drop_index(name)
+                    print(f"[startup] Dropped unique index on applicant_id: {name!r} (app uses user_id)")
+                except Exception as drop_err:
+                    print(f"[startup] Failed to drop index {name!r}: {drop_err}")
         apps.create_index(
             [("user_id", ASCENDING), ("job_id", ASCENDING)],
             unique=True,
@@ -104,8 +145,10 @@ async def login_post(request: Request, username: str = Form(...), password: str 
     if not user:
         # Fallback users (e.g. recruiter1) may not be in DB; no session company_id
         user = {"user_id": None, "role": role, "company_id": None}
-    request.session["user_id"] = user.get("user_id")
+    uid = user.get("user_id")
+    request.session["user_id"] = str(uid) if uid is not None else None
     request.session["role"] = role
+    request.session["username"] = user.get("username", username.strip())
     if role == "recruiter":
         request.session["company_id"] = user.get("company_id")
 
@@ -231,15 +274,49 @@ async def applicant_applied_jobs_page(request: Request):
     )
 
 
+def _get_jobs_for_company(company_id: str):
+    """Fetch all jobs for a company, most recent first."""
+    if not company_id:
+        return []
+    try:
+        jobs_coll = get_job_collection()
+        cursor = jobs_coll.find({"company_id": company_id}).sort("created_at", -1)
+        result = []
+        for job in cursor:
+            created = job.get("created_at")
+            created_str = created.isoformat() + "Z" if hasattr(created, "isoformat") else str(created) if created else ""
+            result.append({
+                "id": str(job["_id"]),
+                "title": job.get("title", ""),
+                "preview": job.get("preview", ""),
+                "qualifications": job.get("qualifications", ""),
+                "created_at": created_str,
+            })
+        return result
+    except Exception:
+        return []
+
+
 @app.get("/recruiter", response_class=HTMLResponse)
 async def recruiter_page(
     request: Request,
     added: str | None = None,
     error: str | None = None,
 ):
+    if request.session.get("role") != "recruiter":
+        return RedirectResponse(url="/login", status_code=303)
+    company_id = request.session.get("company_id")
+    recruiter_name = request.session.get("username", "Recruiter")
+    jobs = _get_jobs_for_company(company_id) if company_id else []
     return templates.TemplateResponse(
         "recruiter.html",
-        {"request": request, "job_added": added is not None, "job_error": error is not None},
+        {
+            "request": request,
+            "recruiter_name": recruiter_name,
+            "jobs": jobs,
+            "job_added": added is not None,
+            "job_error": error is not None,
+        },
     )
 
 
@@ -421,15 +498,26 @@ async def create_application(request: Request, job_id: str = Form(...)):
     Create an application for a job. Uses session user_id (applicant).
     Stores in Jobs.ApplicationsCollection: user_id, company_id, job_id, job_title, etc.
     """
-    user_id = request.session.get("user_id")
+    raw_user_id = request.session.get("user_id")
+    user_id = str(raw_user_id).strip() if raw_user_id else None
     if request.session.get("role") != "applicant" or not user_id:
         return RedirectResponse(url="/login", status_code=303)
+
+    job_id = (job_id or "").strip()
+    if not job_id:
+        return RedirectResponse(url="/apply?error=job_not_found", status_code=303)
 
     try:
         jobs_coll = get_job_collection()
         job = jobs_coll.find_one({"_id": ObjectId(job_id)})
         if not job:
             return RedirectResponse(url="/apply?error=job_not_found", status_code=303)
+
+        apps_coll = get_applications_collection()
+        existing = apps_coll.find_one({"user_id": user_id, "job_id": job_id})
+        if existing:
+            print(f"[applications] already_applied: user_id={user_id!r} job_id={job_id!r}")
+            return RedirectResponse(url="/apply?error=already_applied", status_code=303)
 
         company_id = str(job.get("company_id", ""))
         job_title = job.get("title", "")
@@ -439,13 +527,15 @@ async def create_application(request: Request, job_id: str = Form(...)):
         applicant_snapshot = {}
         if profile_doc:
             applicant_snapshot = {
-                "profile_data": profile_doc.get("profile_data"),
+                "profile_data": {
+                    "Name": profile_doc.get("Name"),
+                    "Skills": profile_doc.get("Skills", {}),
+                },
                 "github_url": profile_doc.get("github_url"),
                 "content_hash": profile_doc.get("content_hash"),
             }
 
-        apps = get_applications_collection()
-        apps.insert_one({
+        apps_coll.insert_one({
             "user_id": user_id,
             "company_id": company_id,
             "job_id": job_id,
@@ -454,9 +544,12 @@ async def create_application(request: Request, job_id: str = Form(...)):
             "applied_at": datetime.datetime.utcnow(),
             "applicant_snapshot": applicant_snapshot,
         })
+        print(f"[applications] applied: user_id={user_id!r} job_id={job_id!r}")
     except pymongo_errors.DuplicateKeyError:
+        print(f"[applications] DuplicateKeyError: user_id={user_id!r} job_id={job_id!r}")
         return RedirectResponse(url="/apply?error=already_applied", status_code=303)
     except Exception as e:
+        print(f"[applications] error: {e}")
         return RedirectResponse(url="/apply?error=1", status_code=303)
 
     return RedirectResponse(url="/apply?applied=1", status_code=303)
@@ -478,6 +571,142 @@ async def list_applications(request: Request, job_id: str):
         "applications.html",
         {"request": request, "job_id": job_id, "applications": application_list},
     )
+
+
+@app.get("/api/jobs/{job_id}/applications")
+async def api_job_applications(request: Request, job_id: str):
+    """JSON: applications for a job. Recruiter only; job must belong to recruiter's company."""
+    if request.session.get("role") != "recruiter" or not request.session.get("company_id"):
+        return JSONResponse({"error": "Not authorized."}, status_code=401)
+    company_id = request.session["company_id"]
+    try:
+        job = get_job_collection().find_one({"_id": ObjectId(job_id)})
+    except Exception:
+        job = None
+    if not job or str(job.get("company_id", "")) != company_id:
+        return JSONResponse({"error": "Job not found."}, status_code=404)
+    try:
+        apps = get_applications_collection()
+        application_list = list(apps.find({"job_id": job_id}, {"_id": 0}))
+    except Exception:
+        application_list = []
+    skills_coll = get_skills_profile_collection()
+    out = []
+    for app in application_list:
+        applied_at = app.get("applied_at")
+        applied_str = applied_at.isoformat() + "Z" if hasattr(applied_at, "isoformat") else str(applied_at) if applied_at else None
+        snapshot = app.get("applicant_snapshot") or {}
+        profile_data = snapshot.get("profile_data")
+        if not profile_data or (not profile_data.get("Skills") and not profile_data.get("Name")):
+            user_id = app.get("user_id")
+            if user_id:
+                profile_doc = skills_coll.find_one({"user_id": user_id}, {"_id": 0, "Name": 1, "Skills": 1, "github_url": 1})
+                if profile_doc:
+                    snapshot = dict(snapshot)
+                    snapshot["profile_data"] = {
+                        "Name": profile_doc.get("Name"),
+                        "Skills": profile_doc.get("Skills", {}),
+                    }
+                    if profile_doc.get("github_url") is not None:
+                        snapshot["github_url"] = profile_doc.get("github_url")
+        out.append({
+            "user_id": app.get("user_id"),
+            "job_title": app.get("job_title"),
+            "status": app.get("status"),
+            "applied_at": applied_str,
+            "applicant_snapshot": snapshot,
+        })
+    return JSONResponse({"applications": out})
+
+
+def _flatten_skills_for_ranking(skills_obj) -> str:
+    """Convert nested skills dict to a single string for ranking prompt."""
+    if not skills_obj or not isinstance(skills_obj, dict):
+        return "No skills listed."
+    lines = []
+    def walk(obj, prefix=""):
+        if isinstance(obj, list) and obj:
+            lines.append(prefix + ": " + ", ".join(str(x) for x in obj))
+            return
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                walk(v, prefix + " → " + k if prefix else k)
+    walk(skills_obj)
+    return "\n".join(lines) if lines else "No skills listed."
+
+
+@app.post("/api/jobs/{job_id}/rank-applications")
+async def api_rank_job_applications(request: Request, job_id: str):
+    """Rank applicants by eligibility using Gemini. Recruiter only; returns applications in ranked order."""
+    if request.session.get("role") != "recruiter" or not request.session.get("company_id"):
+        return JSONResponse({"error": "Not authorized."}, status_code=401)
+    company_id = request.session["company_id"]
+    try:
+        job = get_job_collection().find_one({"_id": ObjectId(job_id)})
+    except Exception:
+        job = None
+    if not job or str(job.get("company_id", "")) != company_id:
+        return JSONResponse({"error": "Job not found."}, status_code=404)
+    try:
+        apps = get_applications_collection()
+        application_list = list(apps.find({"job_id": job_id}, {"_id": 0}))
+    except Exception:
+        application_list = []
+    skills_coll = get_skills_profile_collection()
+    out = []
+    for app in application_list:
+        applied_at = app.get("applied_at")
+        applied_str = applied_at.isoformat() + "Z" if hasattr(applied_at, "isoformat") else str(applied_at) if applied_at else None
+        snapshot = app.get("applicant_snapshot") or {}
+        profile_data = snapshot.get("profile_data")
+        if not profile_data or (not profile_data.get("Skills") and not profile_data.get("Name")):
+            user_id = app.get("user_id")
+            if user_id:
+                profile_doc = skills_coll.find_one({"user_id": user_id}, {"_id": 0, "Name": 1, "Skills": 1, "github_url": 1})
+                if profile_doc:
+                    snapshot = dict(snapshot)
+                    snapshot["profile_data"] = {
+                        "Name": profile_doc.get("Name"),
+                        "Skills": profile_doc.get("Skills", {}),
+                    }
+                    if profile_doc.get("github_url") is not None:
+                        snapshot["github_url"] = profile_doc.get("github_url")
+        out.append({
+            "user_id": app.get("user_id"),
+            "job_title": app.get("job_title"),
+            "status": app.get("status"),
+            "applied_at": applied_str,
+            "applicant_snapshot": snapshot or {},
+        })
+
+    if not out:
+        return JSONResponse({"ranked_applications": []})
+
+    job_title = job.get("title", "")
+    job_preview = job.get("preview", "")
+    job_qualifications = job.get("qualifications", "")
+
+    candidates = []
+    for i, app in enumerate(out):
+        snap = app.get("applicant_snapshot") or {}
+        profile = snap.get("profile_data") or {}
+        name = profile.get("Name") or "Applicant"
+        skills_str = _flatten_skills_for_ranking(profile.get("Skills"))
+        candidates.append({"index": i, "name": name, "skills": skills_str})
+
+    try:
+        ranked_indices = rank_applicants_by_eligibility(
+            job_title=job_title,
+            job_preview=job_preview,
+            job_qualifications=job_qualifications,
+            candidates=candidates,
+        )
+    except Exception as e:
+        print(f"[rank-applications] Gemini error: {e}")
+        return JSONResponse({"error": "Ranking failed. Please try again."}, status_code=500)
+
+    ranked_out = [out[i] for i in ranked_indices if 0 <= i < len(out)]
+    return JSONResponse({"ranked_applications": ranked_out})
 
 
 @app.get("/applicant/interview-prep", response_class=HTMLResponse)
