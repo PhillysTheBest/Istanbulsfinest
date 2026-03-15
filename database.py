@@ -60,6 +60,12 @@ def get_skills_profile_collection():
     - skill_hash: str (SHA-256 hash of the skill tree)
     - solana_tx_signature: str (Transaction signature from Anchor)
     - blockchain_status: str ("PENDING", "CONFIRMED", or "FAILED")
+    
+    Fields for Wallet Onboarding:
+    - wallet_verified: bool (True after signature check passes)
+    - wallet_linked_at: datetime (UTC timestamp)
+    - nonce: str (Temporary random string for signing)
+    - nonce_expires_at: datetime (TTL for verification)
     """
     return get_skills_db()["SkillsProfile"]
 

@@ -25,7 +25,7 @@ def get_instruction_discriminator(name: str) -> bytes:
     return hashlib.sha256(f"global:{name}".encode()).digest()[:8]
 
 class SkillRegistryClient:
-    def __init__(self, rpc_url="http://127.0.0.1:8899"):
+    def __init__(self, rpc_url="https://api.devnet.solana.com"):
         self.client = Client(rpc_url)
         
         # Load the SAME wallet used by the CLI (id.json) copied to wallet.json

@@ -30,6 +30,8 @@ if PROJECT_ROOT not in sys.path:
 from CVScraperJSON import extract_github_url, extract_skills_tree, extract_text_from_pdf, scrape_github_profile
 from security_utils import generate_skill_hash
 from solana_integration import SkillRegistryClient
+from verification import router as verification_router
+from onboarding import router as onboarding_router
 
 app = FastAPI(title="CV Skill Tree", description="Skill Tree for CVs")
 static_dir = os.path.join(BASE_DIR, "../frontend/static")
@@ -46,6 +48,10 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=os.environ.get("SESSION_SECRET", "dev-secret-change-in-production"),
 )
+
+# Mount the Verification API
+app.include_router(verification_router)
+app.include_router(onboarding_router)
 
 
 @app.on_event("startup")
