@@ -38,12 +38,17 @@
   margin: 0 auto;
 }
 
-.apply-square:nth-child(4) {
+.apply-grid:not(.apply-grid-applied-jobs) .apply-square:nth-child(4) {
   grid-column: 2;
 }
 
-.apply-square:nth-child(5) {
+.apply-grid:not(.apply-grid-applied-jobs) .apply-square:nth-child(5) {
   grid-column: 3;
+}
+
+.apply-grid-applied-jobs {
+  grid-template-rows: unset;
+  grid-auto-rows: 300px;
 }
 
 .apply-square {
@@ -266,6 +271,21 @@
   background: #333;
 }
 
+.apply-modal-btn-interview {
+  padding: 0.65rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+  background: #1a1a1a;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.apply-modal-btn-interview:hover {
+  background: #333;
+}
+
 .apply-modal-btn-close {
   padding: 0.65rem 1.25rem;
   font-size: 1rem;
@@ -283,4 +303,22 @@
 
 .apply-square-clickable {
   cursor: pointer;
+}
+
+.apply-square-meta {
+  font-size: 0.8125rem;
+  color: #666;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.apply-empty {
+  text-align: center;
+  color: #666;
+  font-size: 1rem;
+  margin: 2rem 0;
+}
+.apply-empty a {
+  color: #1a1a1a;
+  font-weight: 500;
 }

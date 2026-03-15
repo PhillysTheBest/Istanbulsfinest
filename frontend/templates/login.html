@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login</title>
+  <link rel="stylesheet" href="/static/index.css">
   <link rel="stylesheet" href="/static/login.css">
 </head>
 <body>
+  <a href="/" class="back-btn" aria-label="Back">← Back</a>
   <div class="auth-page {% if signup_success or signup_error %}auth-page--signup{% endif %}" id="auth-page">
     <section class="auth-card login-card" {% if signup_success or signup_error %}hidden{% endif %}>
       <h1>Login</h1>

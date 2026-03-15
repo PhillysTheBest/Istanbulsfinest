@@ -120,6 +120,65 @@ async def applicant_page(request: Request, success: str | None = None):
     )
 
 
+def _get_applied_jobs_for_user(user_id: str):
+    """Fetch all applications for user_id and return list with job title, company name, preview, applied_at, status."""
+    apps_coll = get_applications_collection()
+    jobs_coll = get_job_collection()
+    companies_coll = get_companies_collection()
+    applications = list(apps_coll.find({"user_id": user_id}).sort("applied_at", -1))
+    result = []
+    for app in applications:
+        job_id = app.get("job_id")
+        job_title = app.get("job_title", "")
+        company_id = app.get("company_id", "")
+        company_name = ""
+        try:
+            company = companies_coll.find_one({"_id": ObjectId(company_id)})
+            if company:
+                company_name = company.get("name", "")
+        except (TypeError, ValueError):
+            pass
+        preview = ""
+        qualifications = ""
+        created_at = ""
+        try:
+            job = jobs_coll.find_one({"_id": ObjectId(job_id)})
+            if job:
+                preview = job.get("preview", "")
+                qualifications = job.get("qualifications", "")
+                created = job.get("created_at")
+                created_at = created.isoformat() + "Z" if hasattr(created, "isoformat") else str(created) if created else ""
+        except (TypeError, ValueError):
+            pass
+        applied_at = app.get("applied_at")
+        applied_str = applied_at.isoformat() + "Z" if hasattr(applied_at, "isoformat") else str(applied_at) if applied_at else ""
+        applied_formatted = applied_at.strftime("%b %d, %Y") if applied_at and hasattr(applied_at, "strftime") else (applied_str[:10] if applied_str else "")
+        result.append({
+            "id": job_id,
+            "title": job_title,
+            "company_name": company_name,
+            "preview": preview,
+            "qualifications": qualifications,
+            "created_at": created_at,
+            "applied_at": applied_str,
+            "applied_at_formatted": applied_formatted,
+            "status": app.get("status", ""),
+        })
+    return result
+
+
+@app.get("/applicant/applied-jobs", response_class=HTMLResponse)
+async def applicant_applied_jobs_page(request: Request):
+    """Show jobs the logged-in applicant has applied to. Requires applicant session."""
+    if request.session.get("role") != "applicant" or not request.session.get("user_id"):
+        return RedirectResponse(url="/login", status_code=303)
+    jobs = _get_applied_jobs_for_user(request.session["user_id"])
+    return templates.TemplateResponse(
+        "applied-jobs.html",
+        {"request": request, "jobs": jobs},
+    )
+
+
 @app.get("/recruiter", response_class=HTMLResponse)
 async def recruiter_page(
     request: Request,
