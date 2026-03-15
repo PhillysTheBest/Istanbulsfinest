@@ -20,3 +20,13 @@ solders
 
 # Testing/Utilities
 fpdf
+
+# Session Middleware
+starlette-sessions
+itsdangerous
+elevenlabs
+
+# Solana Integration
+solana
+solders
+
