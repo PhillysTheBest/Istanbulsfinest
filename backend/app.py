@@ -29,6 +29,10 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 from CVScraperJSON import extract_github_url, extract_skills_tree, extract_text_from_pdf, scrape_github_profile
 from backend.interview_prep import generate_interview_script, generate_audio_base64, rank_applicants_by_eligibility
+from security_utils import generate_skill_hash
+from solana_integration import SkillRegistryClient
+from verification import router as verification_router
+from onboarding import router as onboarding_router
 
 app = FastAPI(title="CV Skill Tree", description="Skill Tree for CVs")
 static_dir = os.path.join(BASE_DIR, "../frontend/static")
@@ -45,6 +49,10 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=os.environ.get("SESSION_SECRET", "dev-secret-change-in-production"),
 )
+
+# Mount the Verification API
+app.include_router(verification_router)
+app.include_router(onboarding_router)
 
 
 def _index_key_names(info):
@@ -211,9 +219,8 @@ async def skill_tree_page(request: Request):
         return RedirectResponse(url="/applicant/upload", status_code=303)
     return templates.TemplateResponse(
         "skill_tree.html",
-        {"request": request, "profile": profile},
+        {"request": request, "profile": profile}
     )
-
 
 def _get_applied_jobs_for_user(user_id: str):
     """Fetch all applications for user_id and return list with job title, company name, preview, applied_at, status."""
@@ -371,6 +378,7 @@ async def applicant_profile_post(
     linkedin: str = Form(""),
     github: str = Form(""),
     portfolio: str = Form(""),
+    solana_wallet: str = Form(""),
 ):
     if request.session.get("role") != "applicant":
         return RedirectResponse(url="/login", status_code=303)
@@ -397,6 +405,47 @@ async def applicant_profile_post(
             {"$set": extracted_skills},
             upsert=True,
         )
+        
+        # --- WEB2 END ---
+        
+        # --- WEB3 BEGIN ---
+        # 1. Generate SHA-256 Hash for the Skill Tree
+        skill_hash = generate_skill_hash(extracted_skills)
+        
+        # 2. Anchor to Solana Blockchain 
+        # (Assuming the candidate's wallet is provided in the form or extracted)
+        # Requirement: "candidate_wallet: the candidate's Solana public key (string)"
+        candidate_wallet = solana_wallet if solana_wallet else github
+        
+        try:
+            print(f"Anchoring Skill Tree to Solana for wallet: {candidate_wallet}")
+            registry = SkillRegistryClient()
+            tx_sig = registry.issue_skill_passport(candidate_wallet, skill_hash)
+            
+            if tx_sig:
+                blockchain_status = "CONFIRMED"
+                solana_tx_sig = tx_sig
+            else:
+                blockchain_status = "PENDING"
+                solana_tx_sig = None
+        except Exception as e:
+            print(f"Solana Anchoring Error: {e}")
+            blockchain_status = "PENDING"
+            solana_tx_sig = None
+
+        # 3. Update MongoDB with Web3 metadata
+        collection.update_one(
+            {"name": extracted_skills.get("Name", "Unknown")},
+            {"$set": {
+                "candidate_wallet": candidate_wallet,
+                "skill_hash": skill_hash,
+                "solana_tx_signature": solana_tx_sig,
+                "blockchain_status": blockchain_status
+            }},
+            upsert=True
+        )
+        # --- WEB3 END ---
+        
         pprint.pprint(extracted_skills)
     finally:
         os.unlink(tmp_path)
