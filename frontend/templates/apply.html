@@ -4,69 +4,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Apply to Jobs – CV Skill Tree</title>
+  <title>Search quests – CV Skill Tree</title>
   <link rel="stylesheet" href="/static/index.css">
-  <link rel="stylesheet" href="/static/apply.css">
+  <link rel="stylesheet" href="/static/applicant-style-pages.css">
 </head>
 
-<body class="apply-page">
-  <header class="apply-header">
-    <h1>Apply to Jobs</h1>
-  </header>
+<body class="applicant-style-page">
+  <main class="main-content">
+    <h1>Search quests</h1>
 
-  <a href="/applicant" class="back-btn" aria-label="Back to applicant">← Back</a>
+    {% if applied %}
+    <div class="page-message page-message-success" role="alert">Application submitted.</div>
+    {% endif %}
+    {% if error %}
+    <div class="page-message page-message-error" role="alert">
+      {% if error == 'already_applied' %}You have already applied to this job.{% elif error == 'job_not_found' %}Job not found.{% else %}Something went wrong. Please try again.{% endif %}
+    </div>
+    {% endif %}
 
-  {% if applied %}
-  <div class="apply-message apply-message-success" role="alert">Application submitted.</div>
-  {% endif %}
-  {% if error %}
-  <div class="apply-message apply-message-error" role="alert">
-    {% if error == 'already_applied' %}You have already applied to this job.{% elif error == 'job_not_found' %}Job not found.{% else %}Something went wrong. Please try again.{% endif %}
-  </div>
-  {% endif %}
-
-  <div class="apply-content">
-    <div class="apply-grid">
+    <div class="job-grid">
       {% for job in jobs %}
-      <div class="apply-square{% if job %} apply-square-clickable{% endif %}" data-index="{{ loop.index0 }}" data-job-id="{{ job.id if job else '' }}" data-job-title="{{ (job.title if job else '')|e }}" data-company-name="{{ (job.company_name if job else '')|e }}" data-preview="{{ (job.preview if job else '')|e }}" data-qualifications="{{ (job.qualifications if job else '')|e }}" data-created-at="{{ job.created_at if job else '' }}" data-company-id="{{ job.company_id if job else '' }}" aria-label="{{ (job.title if job else 'Job ' ~ loop.index)|e }}">
+      <div class="job-square{% if job %} job-square-clickable{% endif %}" data-index="{{ loop.index0 }}" data-job-id="{{ job.id if job else '' }}" data-job-title="{{ (job.title if job else '')|e }}" data-company-name="{{ (job.company_name if job else '')|e }}" data-preview="{{ (job.preview if job else '')|e }}" data-qualifications="{{ (job.qualifications if job else '')|e }}" data-created-at="{{ job.created_at if job else '' }}" data-company-id="{{ job.company_id if job else '' }}" aria-label="{{ (job.title if job else 'Job ' ~ loop.index)|e }}">
         {% if job %}
-        <div class="apply-square-inner">
-          <div class="apply-square-title">{{ job.title }}</div>
-          <div class="apply-square-company">{{ job.company_name }}</div>
-          <div class="apply-square-preview">{{ job.preview }}</div>
-        </div>
+        <div class="job-square-title">{{ job.title }}</div>
+        <div class="job-square-company">{{ job.company_name }}</div>
+        <div class="job-square-preview">{{ job.preview }}</div>
         {% else %}
-        <div class="apply-square-inner apply-square-empty">No job</div>
+        <div class="job-square-preview job-square-empty">No job</div>
         {% endif %}
       </div>
       {% endfor %}
     </div>
-    <div class="apply-refresh-wrap">
-      <a href="/apply" class="apply-refresh" id="apply-refresh" aria-label="Refresh to load 5 new random jobs">
-        <svg class="apply-refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M23 4v6h-6M1 20v-6h6"/>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-        </svg>
-      </a>
-    </div>
-  </div>
+  </main>
 
-  <div id="apply-job-modal" class="apply-modal" role="dialog" aria-labelledby="apply-modal-title" aria-modal="true" hidden>
-    <div class="apply-modal-backdrop" id="apply-modal-backdrop"></div>
-    <div class="apply-modal-card">
-      <h2 id="apply-modal-title" class="apply-modal-title">Job details</h2>
-      <div class="apply-modal-body">
-        <p class="apply-modal-field"><strong>Title</strong><span id="apply-modal-title-text"></span></p>
-        <p class="apply-modal-field"><strong>Company</strong><span id="apply-modal-company"></span></p>
-        <p class="apply-modal-field"><strong>Preview</strong><span id="apply-modal-preview"></span></p>
-        <p class="apply-modal-field"><strong>Qualifications</strong><pre id="apply-modal-qualifications"></pre></p>
-        <p class="apply-modal-field"><strong>Posted</strong><span id="apply-modal-created"></span></p>
+  <a href="/applicant/tree" class="back-btn" aria-label="Back to skill tree">← Back</a>
+  <a href="/apply" class="refresh-btn" id="apply-refresh" aria-label="Refresh to load new jobs">
+    <svg class="apply-refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M23 4v6h-6M1 20v-6h6"/>
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+    </svg>
+  </a>
+
+  <div id="apply-job-modal" class="modal-overlay" role="dialog" aria-labelledby="apply-modal-title" aria-modal="true" hidden>
+    <div class="modal-backdrop" id="apply-modal-backdrop"></div>
+    <div class="modal-box">
+      <button type="button" class="modal-close-btn" id="apply-modal-close" aria-label="Close">×</button>
+      <h2 id="apply-modal-title" class="modal-title">Job details</h2>
+      <div class="modal-body">
+        <p class="modal-field"><strong>Title</strong><span id="apply-modal-title-text"></span></p>
+        <p class="modal-field"><strong>Company</strong><span id="apply-modal-company"></span></p>
+        <p class="modal-field"><strong>Preview</strong><span id="apply-modal-preview"></span></p>
+        <p class="modal-field"><strong>Qualifications</strong><pre id="apply-modal-qualifications"></pre></p>
+        <p class="modal-field"><strong>Posted</strong><span id="apply-modal-created"></span></p>
       </div>
-      <form action="/applications" method="post" class="apply-modal-form">
+      <form action="/applications" method="post" style="margin:0;">
         <input type="hidden" name="job_id" id="apply-modal-job-id" value="">
-        <div class="apply-modal-actions">
-          <button type="submit" class="apply-modal-btn-apply">Apply</button>
-          <button type="button" class="apply-modal-btn-close" id="apply-modal-close">Close</button>
+        <div class="modal-actions">
+          <button type="submit" class="modal-btn-primary">Apply</button>
+          <button type="button" class="modal-btn-close" id="apply-modal-close-btn">Close</button>
         </div>
       </form>
     </div>
@@ -77,6 +72,7 @@
       var modal = document.getElementById('apply-job-modal');
       var backdrop = document.getElementById('apply-modal-backdrop');
       var closeBtn = document.getElementById('apply-modal-close');
+      var closeBtn2 = document.getElementById('apply-modal-close-btn');
       var titleEl = document.getElementById('apply-modal-title-text');
       var companyEl = document.getElementById('apply-modal-company');
       var previewEl = document.getElementById('apply-modal-preview');
@@ -108,10 +104,11 @@
         modal.setAttribute('hidden', '');
       }
 
-      document.querySelectorAll('.apply-square-clickable').forEach(function (el) {
+      document.querySelectorAll('.job-square-clickable').forEach(function (el) {
         el.addEventListener('click', function () { openModal(el); });
       });
       if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      if (closeBtn2) closeBtn2.addEventListener('click', closeModal);
       if (backdrop) backdrop.addEventListener('click', closeModal);
     })();
   </script>

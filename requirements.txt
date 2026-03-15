@@ -21,3 +21,4 @@ fpdf
 # Session Middleware
 starlette-sessions
 itsdangerous
+elevenlabs

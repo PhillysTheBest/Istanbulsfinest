@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload your CV – CV Skill Tree</title>
+  <link rel="stylesheet" href="/static/applicant.css">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .upload-page-card {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+    .upload-page-card h1 {
+      margin: 0 0 1.5rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+      text-align: center;
+      background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .upload-page-card .profile-form label { color: #cbd5e1; }
+    .upload-page-card .profile-form .required { color: #f87171; }
+    .upload-page-card .profile-form .optional { color: #94a3b8; }
+    .upload-page-card .profile-form input[type="url"] {
+      background: #1e293b;
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #e2e8f0;
+    }
+    .upload-page-card .drop-zone {
+      background: #1e293b;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .upload-page-card .drop-zone:hover,
+    .upload-page-card .drop-zone--over {
+      border-color: #64748b;
+      background: #334155;
+    }
+    .upload-page-card .drop-zone-prompt { color: #94a3b8; }
+    .upload-page-card .profile-submit {
+      margin-top: 0.75rem;
+      background: #4338ca;
+    }
+    .upload-page-card .profile-submit:hover { background: #5b21b6; }
+  </style>
+</head>
+
+<body>
+  <div class="upload-page-card">
+    <h1>Upload your CV to continue</h1>
+    <p style="text-align: center; color: #94a3b8; font-size: 0.9375rem; margin: 0 0 1.5rem;">
+      We'll analyze your CV and build your skill tree. You need to do this once after logging in.
+    </p>
+
+    <form action="/applicant/profile" method="post" enctype="multipart/form-data" class="profile-form">
+      <div class="form-group">
+        <label for="cv-file">CV (PDF) <span class="required">required</span></label>
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="cv-file" name="cv" accept=".pdf,application/pdf" required aria-required="true">
+          <label for="cv-file" class="drop-zone-label">
+            <span class="drop-zone-prompt" id="drop-zone-prompt">Drag and drop your CV here, or click to choose</span>
+            <span class="drop-zone-accepted" id="drop-zone-accepted" aria-live="polite">
+              <span class="drop-zone-check" aria-hidden="true">✓</span>
+              <span class="drop-zone-filename" id="cv-filename"></span>
+              <button type="button" class="drop-zone-remove" id="cv-remove" aria-label="Remove file">Remove</button>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="linkedin">LinkedIn profile <span class="optional">optional</span></label>
+        <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/..." autocomplete="url">
+      </div>
+
+      <div class="form-group">
+        <label for="github">GitHub link <span class="optional">optional</span></label>
+        <input type="url" id="github" name="github" placeholder="https://github.com/..." autocomplete="url">
+      </div>
+
+      <div class="form-group">
+        <label for="portfolio">Portfolio website <span class="optional">optional</span></label>
+        <input type="url" id="portfolio" name="portfolio" placeholder="https://..." autocomplete="url">
+      </div>
+
+      <button type="submit" class="profile-submit">Submit &amp; generate skill tree</button>
+    </form>
+  </div>
+
+  <script>
+    (function () {
+      var dropZone = document.getElementById('drop-zone');
+      var fileInput = document.getElementById('cv-file');
+      var promptEl = document.getElementById('drop-zone-prompt');
+      var acceptedEl = document.getElementById('drop-zone-accepted');
+      var filenameEl = document.getElementById('cv-filename');
+      var removeBtn = document.getElementById('cv-remove');
+      if (!dropZone || !fileInput) return;
+
+      function updateAcceptedDisplay() {
+        var files = fileInput.files;
+        if (files && files.length) {
+          filenameEl.textContent = files[0].name;
+          if (promptEl) promptEl.classList.add('hidden');
+          if (acceptedEl) acceptedEl.classList.add('visible');
+          dropZone.classList.add('drop-zone--has-file');
+        } else {
+          if (promptEl) promptEl.classList.remove('hidden');
+          if (acceptedEl) acceptedEl.classList.remove('visible');
+          dropZone.classList.remove('drop-zone--has-file');
+        }
+      }
+
+      function highlight() { dropZone.classList.add('drop-zone--over'); }
+      function unhighlight() { dropZone.classList.remove('drop-zone--over'); }
+      function assignFile(file) {
+        try {
+          var dt = new DataTransfer();
+          dt.items.add(file);
+          fileInput.files = dt.files;
+          updateAcceptedDisplay();
+        } catch (err) { }
+      }
+
+      fileInput.addEventListener('change', updateAcceptedDisplay);
+      if (removeBtn) {
+        removeBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          fileInput.value = '';
+          updateAcceptedDisplay();
+        });
+      }
+      dropZone.addEventListener('dragover', function (e) { e.preventDefault(); highlight(); });
+      dropZone.addEventListener('dragleave', unhighlight);
+      dropZone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        unhighlight();
+        var files = e.dataTransfer && e.dataTransfer.files;
+        if (files && files.length) assignFile(files[0]);
+      });
+    })();
+  </script>
+</body>
+
+</html>
