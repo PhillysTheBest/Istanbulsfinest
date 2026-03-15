@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from solders.pubkey import Pubkey
 from solders.signature import Signature
-from database import get_skills_profile_collection
+from database import get_skills_profile_collection, get_blockchain_profile_collection
 from solana_integration import SkillRegistryClient
 
 # --- MODELS ---
@@ -48,26 +48,26 @@ def generate_wallet_nonce(candidate_id: str) -> NonceResponse:
     expires_at = datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
     
     # --- WEB2 ---
-    collection = get_skills_profile_collection()
-    # Store nonce in the candidate's existing Profile document
+    collection = get_blockchain_profile_collection()
+    # Store nonce in the BlockchainProfile document
     result = collection.update_one(
-        {"user_id": candidate_id}, # Assuming user_id is the primary lookup key
+        {"user_id": candidate_id},
         {"$set": {
+            "user_id": candidate_id,
             "nonce": nonce,
             "nonce_expires_at": expires_at
-        }}
+        }},
+        upsert=True
     )
     
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Candidate profile not found")
-        
+    # We always return the message even if we just created the document
     message = f"Sign this message to verify your Istanbulsfinest wallet ownership.\nNonce: {nonce}\nExpires in 5 minutes."
     
     return NonceResponse(nonce=nonce, message=message)
 
 def verify_wallet_signature(candidate_id: str, wallet_address: str, signed_message_hex: str) -> WalletVerifyResponse:
     """ Verifies the signature from the wallet and links it to the profile. """
-    collection = get_skills_profile_collection()
+    collection = get_blockchain_profile_collection()
     doc = collection.find_one({"user_id": candidate_id})
     
     if not doc:
@@ -147,10 +147,13 @@ def verify_wallet_signature(candidate_id: str, wallet_address: str, signed_messa
 
 def get_onboarding_status(candidate_id: str) -> OnboardingStatus:
     """ Computes the candidate's current step and next required action. """
-    collection = get_skills_profile_collection()
-    doc = collection.find_one({"user_id": candidate_id})
+    skills_coll = get_skills_profile_collection()
+    blockchain_coll = get_blockchain_profile_collection()
     
-    if not doc:
+    skills_doc = skills_coll.find_one({"user_id": candidate_id})
+    blockchain_doc = blockchain_coll.find_one({"user_id": candidate_id})
+    
+    if not skills_doc and not blockchain_doc:
         return OnboardingStatus(
             candidate_id=candidate_id,
             cv_parsed=False, skill_hash_ready=False, wallet_linked=False,
@@ -158,11 +161,11 @@ def get_onboarding_status(candidate_id: str) -> OnboardingStatus:
             next_step="Upload your CV to start the verification process."
         )
 
-    cv_parsed = True # If doc exists, Gemini already processed it
-    skill_hash = doc.get("skill_hash")
+    cv_parsed = skills_doc is not None
+    skill_hash = blockchain_doc.get("skill_hash") if blockchain_doc else None
     skill_hash_ready = skill_hash is not None
-    wallet_linked = doc.get("wallet_verified", False)
-    blockchain_status = doc.get("blockchain_status", "PENDING")
+    wallet_linked = blockchain_doc.get("wallet_verified", False) if blockchain_doc else False
+    blockchain_status = blockchain_doc.get("blockchain_status", "PENDING") if blockchain_doc else "PENDING"
     
     # Dynamic Next Step Logic
     if not skill_hash_ready:

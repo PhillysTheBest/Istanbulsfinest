@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Path
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from database import get_skills_profile_collection
+from database import get_blockchain_profile_collection
 from solana_integration import SkillRegistryClient
 
 # --- MODELS ---
@@ -45,7 +45,7 @@ async def verify_candidate(candidate_wallet: str) -> VerificationResult:
     both MongoDB and the Solana blockchain.
     """
     # --- WEB2 ---
-    collection = get_skills_profile_collection()
+    collection = get_blockchain_profile_collection()
     doc = collection.find_one({"candidate_wallet": candidate_wallet})
     
     if not doc:

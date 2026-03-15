@@ -20,6 +20,7 @@ from database import (
     get_companies_collection,
     get_applications_collection,
     get_skills_profile_collection,
+    get_blockchain_profile_collection,
     get_job_collection,
 )
 
@@ -433,10 +434,12 @@ async def applicant_profile_post(
             blockchain_status = "PENDING"
             solana_tx_sig = None
 
-        # 3. Update MongoDB with Web3 metadata
-        collection.update_one(
-            {"name": extracted_skills.get("Name", "Unknown")},
+        # 3. Update MongoDB with Web3 metadata in the separate BlockchainProfile collection
+        blockchain_collection = get_blockchain_profile_collection()
+        blockchain_collection.update_one(
+            {"user_id": user_id},
             {"$set": {
+                "user_id": user_id,
                 "candidate_wallet": candidate_wallet,
                 "skill_hash": skill_hash,
                 "solana_tx_signature": solana_tx_sig,

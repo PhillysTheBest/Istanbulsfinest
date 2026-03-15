@@ -7,7 +7,6 @@ python-dotenv
 
 # Database
 pymongo
-certifi
 
 # CV Scraper Dependencies
 google-genai
@@ -15,10 +14,9 @@ PyPDF2
 requests
 beautifulsoup4
 
+# Blockchain Dependencies
+solana
+solders
+
 # Testing/Utilities
 fpdf
-
-# Session Middleware
-starlette-sessions
-itsdangerous
-elevenlabs

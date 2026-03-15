@@ -54,20 +54,23 @@ def get_skills_db():
 def get_skills_profile_collection():
     """
     Helper to get the specific 'SkillsProfile' collection directly.
-    
-    Fields for Solana Integration:
-    - candidate_wallet: str (Solana public key)
-    - skill_hash: str (SHA-256 hash of the skill tree)
-    - solana_tx_signature: str (Transaction signature from Anchor)
-    - blockchain_status: str ("PENDING", "CONFIRMED", or "FAILED")
-    
-    Fields for Wallet Onboarding:
-    - wallet_verified: bool (True after signature check passes)
-    - wallet_linked_at: datetime (UTC timestamp)
-    - nonce: str (Temporary random string for signing)
-    - nonce_expires_at: datetime (TTL for verification)
+    Pure CV and skill data linked by user_id.
     """
     return get_skills_db()["SkillsProfile"]
+
+# Blockchain Profile Collection (Solana metadata)
+def get_blockchain_profile_collection():
+    """
+    Stores Solana/blockchain metadata separately from the Skill Tree.
+    Schema: {
+        user_id, candidate_wallet, skill_hash,
+        solana_tx_signature, blockchain_status,
+        wallet_verified, wallet_linked_at,
+        nonce, nonce_expires_at
+    }
+    Linked to SkillsProfile via user_id.
+    """
+    return get_skills_db()["BlockchainProfile"]
 
 # Jobs Database
 def get_job_db():

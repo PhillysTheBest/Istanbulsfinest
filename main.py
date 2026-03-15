@@ -107,7 +107,7 @@ def main():
     
     try:
         # uvicorn runs directly on Windows
-        subprocess.call("uvicorn backend.app:app --reload", shell=True, cwd=PROJECT_ROOT)
+        subprocess.call("python -m uvicorn backend.app:app --reload", shell=True, cwd=PROJECT_ROOT)
     except KeyboardInterrupt:
         print("\nSystem shut down.")
 
